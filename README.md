@@ -7,6 +7,9 @@ Asynchronous user credit payment backend built as a NestJS monorepo.
 - `apps/api` — HTTP API, admin reports, and RabbitMQ job publisher.
 - `apps/worker` — RabbitMQ consumer and payment-processing worker.
 - `libs/prisma` — shared Prisma client service and database schema.
+- `libs/common` — shared DTOs, enums, queue contracts, domain errors, and state machines.
+- `libs/redis` — shared Redis module and service.
+- `libs/messaging` — RabbitMQ topology and publisher helpers.
 
 ## Development
 

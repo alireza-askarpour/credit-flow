@@ -20,7 +20,13 @@
     "esModuleInterop": true,
     "paths": {
       "@app/prisma": ["libs/prisma/src"],
-      "@app/prisma/*": ["libs/prisma/src/*"]
+      "@app/prisma/*": ["libs/prisma/src/*"],
+      "@app/common": ["libs/common/src"],
+      "@app/common/*": ["libs/common/src/*"],
+      "@app/redis": ["libs/redis/src"],
+      "@app/redis/*": ["libs/redis/src/*"],
+      "@app/messaging": ["libs/messaging/src"],
+      "@app/messaging/*": ["libs/messaging/src/*"]
     }
   }
 }
