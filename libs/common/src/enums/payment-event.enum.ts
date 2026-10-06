@@ -5,4 +5,5 @@ export enum PaymentEvent {
   SUCCEEDED = 'payment.succeeded',
   FAILED = 'payment.failed',
   RETRY_TRIGGERED = 'payment.retry_triggered',
+  CANCELLED = 'payment.cancelled',
 }

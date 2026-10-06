@@ -34,6 +34,21 @@ request; reusing it with a different payload returns a conflict. The key is
 cached briefly in Redis for contention control, while PostgreSQL remains the
 source of truth through its unique constraint.
 
+Payment status and history are available through:
+
+- `GET /payments/:id`
+- `GET /payments/:id/events`
+- `GET /users/:id/payments?page=1&limit=20&status=QUEUED&reference=...`
+- `POST /payments/:id/cancel`
+
+Public payment responses expose only safe failure codes such as
+`PAYMENT_BUSINESS_FAILURE` or `PAYMENT_TECHNICAL_FAILURE`; internal failure
+messages and event metadata are not returned.
+
+Cancellation is accepted only while a payment is `PENDING` or `QUEUED`. Once
+processing has started, the conditional transition fails and the API returns a
+conflict.
+
 If a payment row is created but RabbitMQ publishing fails, the API recovery
 cron republishes stale `PENDING` requests every 10 seconds. The transition to
 `QUEUED` is still conditional, so a later duplicate delivery cannot overwrite a

@@ -6,10 +6,11 @@ import { RedisModule } from '@app/redis';
 import { PaymentsController } from './payments.controller';
 import { PaymentsService } from './payments.service';
 import { PendingPaymentRecoveryService } from './pending-payment-recovery.service';
+import { UserPaymentsController } from './user-payments.controller';
 
 @Module({
   imports: [PrismaModule, RedisModule, MessagingModule, ScheduleModule.forRoot()],
-  controllers: [PaymentsController],
+  controllers: [PaymentsController, UserPaymentsController],
   providers: [PaymentsService, PendingPaymentRecoveryService],
 })
 export class PaymentsModule {}

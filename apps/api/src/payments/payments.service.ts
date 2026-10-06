@@ -13,6 +13,10 @@ import {
 import { RedisService } from '@app/redis';
 import { MessagingService } from '@app/messaging';
 import { CreatePaymentDto } from './dto/create-payment.dto';
+import { PaymentDetailsResponseDto } from './dto/payment-details-response.dto';
+import { PaymentEventResponseDto } from './dto/payment-event-response.dto';
+import { PaymentListQueryDto } from './dto/payment-list-query.dto';
+import { PaymentListResponseDto } from './dto/payment-list-response.dto';
 import { PaymentSubmissionResponseDto } from './dto/payment-submission-response.dto';
 
 const IDEMPOTENCY_TTL_SECONDS = 300;
@@ -118,6 +122,88 @@ export class PaymentsService {
     }
   }
 
+  async findById(id: string): Promise<PaymentDetailsResponseDto> {
+    const payment = await this.payments.findById(id);
+    if (!payment) {
+      throw new NotFoundException('Payment request not found');
+    }
+
+    return this.toDetailsResponse(payment);
+  }
+
+  async findEvents(id: string): Promise<PaymentEventResponseDto[]> {
+    const payment = await this.payments.findById(id);
+    if (!payment) {
+      throw new NotFoundException('Payment request not found');
+    }
+
+    const events = await this.payments.findEventsByPaymentRequestId(id);
+    return events.map((event) => ({
+      id: event.id,
+      eventType: event.eventType,
+      previousStatus: event.previousStatus as PaymentStatus | undefined,
+      newStatus: event.newStatus as PaymentStatus | undefined,
+      attemptNumber: event.attemptNumber ?? undefined,
+      createdAt: event.createdAt,
+    }));
+  }
+
+  async findByUser(
+    userId: string,
+    query: PaymentListQueryDto,
+  ): Promise<PaymentListResponseDto> {
+    const user = await this.users.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const { items, total } = await this.payments.findByUser(userId, {
+      page: query.page,
+      limit: query.limit,
+      status: query.status,
+      dateFrom: query.dateFrom ? new Date(query.dateFrom) : undefined,
+      dateTo: query.dateTo ? new Date(query.dateTo) : undefined,
+      reference: query.reference,
+    });
+
+    return {
+      items: items.map((item) => this.toDetailsResponse(item)),
+      page: query.page,
+      limit: query.limit,
+      total,
+      totalPages: Math.ceil(total / query.limit),
+    };
+  }
+
+  async cancel(id: string): Promise<PaymentDetailsResponseDto> {
+    const payment = await this.payments.findById(id);
+    if (!payment) {
+      throw new NotFoundException('Payment request not found');
+    }
+
+    const cancelledFromPending = await this.payments.transitionStatus(
+      id,
+      PaymentStatus.PENDING,
+      PaymentStatus.CANCELLED,
+    );
+    const cancelled =
+      cancelledFromPending ||
+      (await this.payments.transitionStatus(
+        id,
+        PaymentStatus.QUEUED,
+        PaymentStatus.CANCELLED,
+      ));
+
+    if (!cancelled) {
+      throw new ConflictException(
+        'Payment can only be cancelled while PENDING or QUEUED',
+      );
+    }
+
+    await this.payments.recordEvent(id, 'CANCELLED', 'CANCELLED');
+    return this.findById(id);
+  }
+
   private resolveExisting(
     existing: {
       id: string;
@@ -158,6 +244,44 @@ export class PaymentsService {
       amount: payment.amount.toString(),
       reference: payment.reference,
       createdAt: payment.createdAt,
+    };
+  }
+
+  private toDetailsResponse(payment: {
+    id: string;
+    userId: string;
+    amount: bigint;
+    reference: string;
+    description: string | null;
+    status: string;
+    failureType: string | null;
+    retryCount: number;
+    maxAttempts: number;
+    nextRetryAt: Date | null;
+    queuedAt: Date | null;
+    processingStartedAt: Date | null;
+    completedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+  }): PaymentDetailsResponseDto {
+    return {
+      id: payment.id,
+      userId: payment.userId,
+      amount: payment.amount.toString(),
+      reference: payment.reference,
+      description: payment.description ?? undefined,
+      status: payment.status as PaymentStatus,
+      failureCode: payment.failureType
+        ? `PAYMENT_${payment.failureType}_FAILURE`
+        : undefined,
+      retryCount: payment.retryCount,
+      maxAttempts: payment.maxAttempts,
+      nextRetryAt: payment.nextRetryAt ?? undefined,
+      queuedAt: payment.queuedAt ?? undefined,
+      processingStartedAt: payment.processingStartedAt ?? undefined,
+      completedAt: payment.completedAt ?? undefined,
+      createdAt: payment.createdAt,
+      updatedAt: payment.updatedAt,
     };
   }
 }

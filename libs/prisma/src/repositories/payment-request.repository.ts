@@ -23,6 +23,52 @@ export class PaymentRequestRepository {
     return this.prisma.paymentRequest.findUnique({ where: { id } });
   }
 
+  findEventsByPaymentRequestId(paymentRequestId: string) {
+    return this.prisma.paymentEvent.findMany({
+      where: { paymentRequestId },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  async findByUser(
+    userId: string,
+    options: {
+      page: number;
+      limit: number;
+      status?: PaymentStatus;
+      dateFrom?: Date;
+      dateTo?: Date;
+      reference?: string;
+    },
+  ) {
+    const where: Prisma.PaymentRequestWhereInput = {
+      userId,
+      status: options.status
+        ? (options.status as PrismaPaymentRequestStatus)
+        : undefined,
+      reference: options.reference
+        ? { contains: options.reference, mode: 'insensitive' }
+        : undefined,
+      createdAt:
+        options.dateFrom || options.dateTo
+          ? { gte: options.dateFrom, lte: options.dateTo }
+          : undefined,
+    };
+    const skip = (options.page - 1) * options.limit;
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.paymentRequest.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: options.limit,
+      }),
+      this.prisma.paymentRequest.count({ where }),
+    ]);
+
+    return { items, total };
+  }
+
   findByIdempotencyKey(idempotencyKey: string) {
     return this.prisma.paymentRequest.findUnique({
       where: { idempotencyKey },
@@ -66,7 +112,8 @@ export class PaymentRequestRepository {
       | 'PROCESSING_STARTED'
       | 'SUCCEEDED'
       | 'FAILED'
-      | 'RETRY_TRIGGERED',
+      | 'RETRY_TRIGGERED'
+      | 'CANCELLED',
     newStatus?: PaymentStatus | PrismaPaymentRequestStatus,
   ) {
     return this.events.create({

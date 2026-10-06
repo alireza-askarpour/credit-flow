@@ -95,6 +95,7 @@ enum PaymentEventType {
   SUCCEEDED
   FAILED
   RETRY_TRIGGERED
+  CANCELLED
 }
 
 model PaymentEvent {
