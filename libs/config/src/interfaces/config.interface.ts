@@ -28,6 +28,9 @@ export interface EnvironmentVariables {
   logging: {
     level: string;
   };
+  admin: {
+    api_key: string;
+  };
   simulation: {
     enabled: boolean;
     max_amount: number;

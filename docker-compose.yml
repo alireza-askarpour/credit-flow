@@ -10,6 +10,7 @@ services:
       DATABASE_URL: postgresql://credit_flow:credit_flow@postgres:5432/credit_flow
       REDIS_URL: redis://redis:6379
       RABBITMQ_URL: amqp://credit_flow:credit_flow@rabbitmq:5672
+      ADMIN_API_KEY: change-me-to-a-long-random-secret
     ports:
       - "3000:3000"
     depends_on:
@@ -31,6 +32,7 @@ services:
       DATABASE_URL: postgresql://credit_flow:credit_flow@postgres:5432/credit_flow
       REDIS_URL: redis://redis:6379
       RABBITMQ_URL: amqp://credit_flow:credit_flow@rabbitmq:5672
+      ADMIN_API_KEY: change-me-to-a-long-random-secret
     ports:
       - "3001:3001"
     depends_on:

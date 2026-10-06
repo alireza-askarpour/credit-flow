@@ -45,6 +45,13 @@ Public payment responses expose only safe failure codes such as
 `PAYMENT_BUSINESS_FAILURE` or `PAYMENT_TECHNICAL_FAILURE`; internal failure
 messages and event metadata are not returned.
 
+Admin reports are available under `/admin/*` and require the `x-admin-api-key`
+header matching `ADMIN_API_KEY`. The API includes paginated user, transaction,
+and payment reports, per-period credit/debit aggregates, and per-user balance
+usage summaries. Aggregate and usage reports are cached in Redis for 30 seconds.
+The aggregate report accepts `daily`, `monthly`, or `yearly` periods and uses
+PostgreSQL `date_trunc` grouping.
+
 Cancellation is accepted only while a payment is `PENDING` or `QUEUED`. Once
 processing has started, the conditional transition fails and the API returns a
 conflict.

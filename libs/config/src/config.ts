@@ -50,6 +50,9 @@ export const config = (): EnvironmentVariables => ({
   logging: {
     level: process.env.LOG_LEVEL ?? 'info',
   },
+  admin: {
+    api_key: required('ADMIN_API_KEY'),
+  },
   simulation: {
     enabled: parseBoolean(process.env.PAYMENT_SIMULATION_ENABLED, true),
     max_amount: parseNumber(process.env.PAYMENT_SIMULATION_MAX_AMOUNT, 1_000_000),

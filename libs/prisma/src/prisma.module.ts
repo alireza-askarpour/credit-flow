@@ -5,6 +5,7 @@ import {
   PaymentRequestRepository,
   TransactionRepository,
   UserRepository,
+  AdminReportRepository,
 } from './repositories';
 
 @Global()
@@ -15,6 +16,7 @@ import {
     TransactionRepository,
     PaymentEventRepository,
     UserRepository,
+    AdminReportRepository,
   ],
   exports: [
     PrismaService,
@@ -22,6 +24,7 @@ import {
     PaymentRequestRepository,
     TransactionRepository,
     PaymentEventRepository,
+    AdminReportRepository,
   ],
 })
 export class PrismaModule {}
