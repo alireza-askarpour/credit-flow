@@ -15,12 +15,17 @@
     "start:worker": "nest start worker",
     "start:dev:api": "nest start api --watch",
     "start:dev:worker": "nest start worker --watch",
+    "start:prod:api": "node dist/apps/api/main.js",
+    "start:prod:worker": "node dist/apps/worker/main.js",
     "prisma:generate": "prisma generate --schema libs/prisma/prisma/schema.prisma",
+    "prisma:migrate": "prisma migrate dev --schema libs/prisma/prisma/schema.prisma",
+    "prisma:migrate:deploy": "prisma migrate deploy --schema libs/prisma/prisma/schema.prisma",
     "prisma:validate": "prisma validate --schema libs/prisma/prisma/schema.prisma",
     "prisma:format": "prisma format --schema libs/prisma/prisma/schema.prisma"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.0",
     "@nestjs/microservices": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
@@ -28,6 +33,9 @@
     "@prisma/client": "^6.16.2",
     "amqplib": "^0.10.7",
     "ioredis": "^5.7.0",
+    "joi": "^18.0.1",
+    "nestjs-pino": "^4.4.0",
+    "pino-http": "^10.5.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2"
   },
