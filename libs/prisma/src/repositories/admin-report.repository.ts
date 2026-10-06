@@ -48,12 +48,14 @@ export class AdminReportRepository {
       this.prisma.transaction.groupBy({
         by: ['type'],
         where: { userId },
+        orderBy: { type: 'asc' },
         _sum: { amount: true },
         _count: { _all: true },
       }),
       this.prisma.paymentRequest.groupBy({
         by: ['status'],
         where: { userId },
+        orderBy: { status: 'asc' },
         _count: { _all: true },
       }),
     ]);

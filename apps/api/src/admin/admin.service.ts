@@ -188,13 +188,33 @@ export class AdminService {
     return { ...user, balance: user.balance.toString() };
   }
 
-  private sumByType(rows: Array<{ by: { type: string }; _sum: { amount: bigint | null }; _count: { _all: number } }>, type: TransactionType) {
-    const row = rows.find((item) => item.by.type === type);
-    return { amount: this.bigIntString(row?._sum.amount), count: row?._count._all ?? 0 };
+  private sumByType(
+    rows: Array<{
+      type: string;
+      _sum?: { amount?: bigint | null };
+      _count?: { _all?: number } | boolean;
+    }>,
+    type: TransactionType,
+  ) {
+    const row = rows.find((item) => item.type === type);
+    return {
+      amount: this.bigIntString(row?._sum?.amount),
+      count: this.groupCount(row?._count),
+    };
   }
 
-  private countByStatus(rows: Array<{ by: { status: string }; _count: { _all: number } }>, status: PaymentStatus): number {
-    return rows.find((item) => item.by.status === status)?._count._all ?? 0;
+  private countByStatus(
+    rows: Array<{
+      status: string;
+      _count?: { _all?: number } | boolean;
+    }>,
+    status: PaymentStatus,
+  ): number {
+    return this.groupCount(rows.find((item) => item.status === status)?._count);
+  }
+
+  private groupCount(count: { _all?: number } | boolean | undefined): number {
+    return typeof count === 'object' && count !== null ? count._all ?? 0 : 0;
   }
 
   private bigIntString(value: bigint | null | undefined): string {

@@ -191,6 +191,10 @@ export class PaymentRequestRepository {
       if (updatedUsers.length === 0) {
         throw new InsufficientBalanceError();
       }
+      const updatedUser = updatedUsers[0];
+      if (!updatedUser) {
+        throw new Error('Updated user balance was not returned');
+      }
 
       const updatedPayment = await client.paymentRequest.updateMany({
         where: {
@@ -213,7 +217,7 @@ export class PaymentRequestRepository {
           amount,
           reference,
           type: 'DEBIT',
-          balanceAfter: updatedUsers[0].balance,
+          balanceAfter: updatedUser.balance,
         },
       });
 

@@ -84,6 +84,9 @@ export class MessagingService implements OnModuleInit, OnModuleDestroy {
     const retryQueue =
       PAYMENT_RETRY_QUEUES.find((queue) => queue.delayMs >= delayMs) ??
       PAYMENT_RETRY_QUEUES[PAYMENT_RETRY_QUEUES.length - 1];
+    if (!retryQueue) {
+      throw new Error('RabbitMQ retry topology is not configured');
+    }
     const published = this.channel.publish(
       PAYMENT_RETRY_EXCHANGE,
       retryQueue.name,
