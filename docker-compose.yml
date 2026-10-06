@@ -1,0 +1,97 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["npm", "run", "start:prod:api"]
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://credit_flow:credit_flow@postgres:5432/credit_flow
+      REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://credit_flow:credit_flow@rabbitmq:5672
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["npm", "run", "start:prod:worker"]
+    environment:
+      NODE_ENV: production
+      WORKER_PORT: 3001
+      DATABASE_URL: postgresql://credit_flow:credit_flow@postgres:5432/credit_flow
+      REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://credit_flow:credit_flow@rabbitmq:5672
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: credit-flow-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: credit_flow
+      POSTGRES_PASSWORD: credit_flow
+      POSTGRES_DB: credit_flow
+    ports:
+      - "5432:5432"
+    volumes:
+      - credit-flow-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U credit_flow -d credit_flow"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: credit-flow-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - credit-flow-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: credit-flow-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: credit_flow
+      RABBITMQ_DEFAULT_PASS: credit_flow
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - credit-flow-rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  credit-flow-postgres-data:
+  credit-flow-redis-data:
+  credit-flow-rabbitmq-data:
