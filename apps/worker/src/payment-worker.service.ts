@@ -43,7 +43,7 @@ export class PaymentWorkerService implements OnModuleInit {
         'PROCESSING_STARTED',
         PaymentStatus.PROCESSING,
       );
-      await this.simulator.run();
+      await this.simulator.run(payment);
       await this.payments.completeSuccessfulPayment(
         payment.id,
         payment.userId,

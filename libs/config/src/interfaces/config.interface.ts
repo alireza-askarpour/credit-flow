@@ -27,4 +27,9 @@ export interface EnvironmentVariables {
   logging: {
     level: string;
   };
+  simulation: {
+    enabled: boolean;
+    max_amount: number;
+    seed?: string;
+  };
 }

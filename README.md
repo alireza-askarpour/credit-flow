@@ -78,6 +78,15 @@ duplicate or terminal messages as safe no-op acknowledgements. Business
 failures such as insufficient balance are acknowledged without retry; technical
 failures are classified centrally and requeued until `maxAttempts` is reached.
 
+Failure simulation is controlled by `PAYMENT_SIMULATION_ENABLED`,
+`PAYMENT_SIMULATION_MAX_AMOUNT`, and the optional `PAYMENT_SIMULATION_SEED`.
+References containing `FAIL` produce a deterministic business failure with no
+retry. References containing `FAIL_TECH` produce a deterministic technical
+failure and are retryable. Other payments use
+`min(0.9, amount / PAYMENT_SIMULATION_MAX_AMOUNT)` as the probability of a
+technical failure. A seed makes this amount-based decision deterministic for
+tests.
+
 The database design includes `users`, `payment_requests`, `transactions`, and
 `payment_events`. Money is stored as integer PostgreSQL `BIGINT` values in the
 configured تومان/ریال unit, user balances have a database-level non-negative

@@ -1,5 +1,8 @@
 import { EnvironmentVariables } from './interfaces/config.interface';
 
+const parseBoolean = (value: string | undefined, fallback = false): boolean =>
+  value === undefined ? fallback : value === 'true';
+
 const parseNumber = (value: string | undefined, fallback: number): number => {
   const parsed = Number.parseInt(value ?? '', 10);
   return Number.isNaN(parsed) ? fallback : parsed;
@@ -45,5 +48,10 @@ export const config = (): EnvironmentVariables => ({
   },
   logging: {
     level: process.env.LOG_LEVEL ?? 'info',
+  },
+  simulation: {
+    enabled: parseBoolean(process.env.PAYMENT_SIMULATION_ENABLED, true),
+    max_amount: parseNumber(process.env.PAYMENT_SIMULATION_MAX_AMOUNT, 1_000_000),
+    seed: process.env.PAYMENT_SIMULATION_SEED,
   },
 });

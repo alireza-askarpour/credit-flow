@@ -12,6 +12,9 @@ export const envValidationSchema = Joi.object({
   LOG_LEVEL: Joi.string()
     .valid('fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent')
     .default('info'),
+  PAYMENT_SIMULATION_ENABLED: Joi.boolean().truthy('true').falsy('false').default(true),
+  PAYMENT_SIMULATION_MAX_AMOUNT: Joi.number().integer().positive().default(1000000),
+  PAYMENT_SIMULATION_SEED: Joi.string().optional(),
   DATABASE_URL: Joi.string().uri({ scheme: ['postgresql', 'postgres'] }).required(),
   REDIS_URL: Joi.string().uri({ scheme: ['redis', 'rediss'] }).required(),
   RABBITMQ_URL: Joi.string()
