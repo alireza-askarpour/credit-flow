@@ -6,6 +6,8 @@ import { HealthModule } from '@app/health';
 import { MessagingModule } from '@app/messaging';
 import { PrismaModule } from '@app/prisma';
 import { RedisModule } from '@app/redis';
+import { PaymentFailureSimulator } from './payment-failure-simulator.service';
+import { PaymentWorkerService } from './payment-worker.service';
 
 @Module({
   imports: [
@@ -33,5 +35,6 @@ import { RedisModule } from '@app/redis';
     MessagingModule,
     HealthModule,
   ],
+  providers: [PaymentFailureSimulator, PaymentWorkerService],
 })
 export class WorkerModule {}

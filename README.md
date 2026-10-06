@@ -71,6 +71,13 @@ The worker and API both enable Nest shutdown hooks. Redis and RabbitMQ clients
 close during shutdown so the worker can stop accepting work before its process
 exits.
 
+The worker consumes payment jobs with manual acknowledgements and a configured
+prefetch limit. It claims each `QUEUED` payment with a conditional update,
+processes the debit and success event in one PostgreSQL transaction, and treats
+duplicate or terminal messages as safe no-op acknowledgements. Business
+failures such as insufficient balance are acknowledged without retry; technical
+failures are classified centrally and requeued until `maxAttempts` is reached.
+
 The database design includes `users`, `payment_requests`, `transactions`, and
 `payment_events`. Money is stored as integer PostgreSQL `BIGINT` values in the
 configured تومان/ریال unit, user balances have a database-level non-negative

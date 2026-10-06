@@ -9,5 +9,6 @@ export * from './enums/transaction-type.enum';
 export * from './errors/domain.error';
 export * from './errors/idempotency.error';
 export * from './errors/payment-state-transition.error';
+export * from './errors/payment-processing.error';
 export * from './filters/http-exception.filter';
 export * from './state-machine/payment-state-machine';

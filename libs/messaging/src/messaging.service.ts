@@ -10,6 +10,7 @@ import {
   PAYMENT_EXCHANGE,
   PAYMENT_QUEUE,
   PAYMENT_ROUTING_KEYS,
+  QUEUE_PREFETCH_COUNT,
   PaymentJobDto,
 } from '@app/common';
 import { EnvironmentVariables } from '@app/config';
@@ -65,6 +66,37 @@ export class MessagingService implements OnModuleInit, OnModuleDestroy {
     }
 
     await this.channel.waitForConfirms();
+  }
+
+  async consumePaymentJobs(
+    handler: (job: PaymentJobDto) => Promise<'ack' | 'requeue' | 'reject'>,
+  ): Promise<void> {
+    if (!this.channel) {
+      throw new Error('RabbitMQ channel is not initialized');
+    }
+
+    await this.channel.prefetch(QUEUE_PREFETCH_COUNT);
+    await this.channel.consume(PAYMENT_QUEUE, async (message) => {
+      if (!message) {
+        return;
+      }
+
+      try {
+        const job = JSON.parse(message.content.toString()) as PaymentJobDto;
+        const outcome = await handler(job);
+
+        if (outcome === 'ack') {
+          this.channel?.ack(message);
+        } else if (outcome === 'requeue') {
+          this.channel?.nack(message, false, true);
+        } else {
+          this.channel?.nack(message, false, false);
+        }
+      } catch (error) {
+        this.logger.error(`Payment message failed: ${String(error)}`);
+        this.channel?.nack(message, false, true);
+      }
+    });
   }
 
   private async setupTopology(): Promise<void> {
