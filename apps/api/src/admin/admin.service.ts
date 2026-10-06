@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { ErrorCode, PaymentStatus, TransactionType } from '@app/common';
+import { ErrorCode, isObject, PaymentStatus, TransactionType } from '@app/common';
 import { AdminReportRepository, AdminReportPeriod } from '@app/prisma';
 import { RedisService } from '@app/redis';
 import { AdminPaginationQueryDto } from './dto/admin-pagination-query.dto';
@@ -214,7 +214,7 @@ export class AdminService {
   }
 
   private groupCount(count: { _all?: number } | boolean | undefined): number {
-    return typeof count === 'object' && count !== null ? count._all ?? 0 : 0;
+    return isObject(count) ? (count as { _all?: number })._all ?? 0 : 0;
   }
 
   private bigIntString(value: bigint | null | undefined): string {

@@ -6,7 +6,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ErrorCode } from '../errors/error-code.enum';
-import { isObject, isString } from '../utils/check.util';
+import { isArrayFull, isObject, isString } from '../utils/check.util';
 
 interface RequestWithId {
   id?: string;
@@ -32,7 +32,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
         : exception instanceof HttpException
           ? exception.message
           : ErrorCode.INTERNAL_SERVER_ERROR;
-    const message = Array.isArray(rawMessage)
+    const message = isArrayFull(rawMessage)
       ? rawMessage.map(toErrorCode).join(',')
       : toErrorCode(rawMessage);
 

@@ -1,8 +1,8 @@
 import { EnvironmentVariables } from './interfaces/config.interface';
-import { ErrorCode, isNumber } from '@app/common';
+import { ErrorCode, isNumber, isUndefined } from '@app/common';
 
 const parseBoolean = (value: string | undefined, fallback = false): boolean =>
-  value === undefined ? fallback : value === 'true';
+  isUndefined(value) ? fallback : value === 'true';
 
 const parseNumber = (value: string | undefined, fallback: number): number => {
   const parsed = Number.parseInt(value ?? '', 10);

@@ -4,7 +4,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
 import { EnvironmentVariables } from '@app/config';
-import { HttpExceptionFilter } from '@app/common';
+import { hasLength, HttpExceptionFilter, isString } from '@app/common';
 import { securityHeadersMiddleware } from './security/security-headers.middleware';
 import { ApiModule } from './app.module';
 
@@ -44,7 +44,7 @@ async function bootstrap(): Promise<void> {
   }
   const corsOrigins = configService.getOrThrow('app.cors_origins', { infer: true });
   app.enableCors({
-    origin: corsOrigins.length > 0 ? corsOrigins : false,
+    origin: hasLength(corsOrigins) ? corsOrigins : false,
     credentials: false,
   });
   await app.listen(configService.getOrThrow('app.port', { infer: true }));
