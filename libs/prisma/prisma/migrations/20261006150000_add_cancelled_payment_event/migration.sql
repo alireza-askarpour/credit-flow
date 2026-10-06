@@ -1,0 +1,1 @@
+ALTER TYPE "PaymentEventType" ADD VALUE 'CANCELLED';
