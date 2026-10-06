@@ -2,10 +2,12 @@ import { PaymentStatus } from '../enums/payment-status.enum';
 import { PaymentStateTransitionError } from '../errors/payment-state-transition.error';
 
 const TRANSITIONS: Readonly<Record<PaymentStatus, readonly PaymentStatus[]>> = {
-  [PaymentStatus.PENDING]: [PaymentStatus.PROCESSING, PaymentStatus.FAILED],
+  [PaymentStatus.PENDING]: [PaymentStatus.QUEUED, PaymentStatus.CANCELLED],
+  [PaymentStatus.QUEUED]: [PaymentStatus.PROCESSING, PaymentStatus.CANCELLED],
   [PaymentStatus.PROCESSING]: [PaymentStatus.SUCCEEDED, PaymentStatus.FAILED],
   [PaymentStatus.SUCCEEDED]: [],
   [PaymentStatus.FAILED]: [PaymentStatus.PROCESSING],
+  [PaymentStatus.CANCELLED]: [],
 };
 
 export function canTransition(

@@ -1,6 +1,8 @@
 export enum PaymentEvent {
   CREATED = 'payment.created',
-  PROCESS = 'payment.process',
+  QUEUED = 'payment.queued',
+  PROCESSING_STARTED = 'payment.processing_started',
   SUCCEEDED = 'payment.succeeded',
   FAILED = 'payment.failed',
+  RETRY_TRIGGERED = 'payment.retry_triggered',
 }

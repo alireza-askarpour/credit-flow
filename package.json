@@ -20,8 +20,12 @@
     "prisma:generate": "prisma generate --schema libs/prisma/prisma/schema.prisma",
     "prisma:migrate": "prisma migrate dev --schema libs/prisma/prisma/schema.prisma",
     "prisma:migrate:deploy": "prisma migrate deploy --schema libs/prisma/prisma/schema.prisma",
+    "prisma:seed": "prisma db seed",
     "prisma:validate": "prisma validate --schema libs/prisma/prisma/schema.prisma",
     "prisma:format": "prisma format --schema libs/prisma/prisma/schema.prisma"
+  },
+  "prisma": {
+    "seed": "node libs/prisma/prisma/seed.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
