@@ -26,6 +26,11 @@ export const config = (): EnvironmentVariables => ({
     cors_origins: process.env.CORS_ORIGINS
       ? process.env.CORS_ORIGINS.split(',').map((origin) => origin.trim())
       : [],
+    swagger_enabled: parseBoolean(
+      process.env.APP_SWAGGER_ENABLED,
+      process.env.NODE_ENV !== 'production',
+    ),
+    swagger_path: process.env.APP_SWAGGER_PATH ?? 'docs',
   },
   worker: {
     id: process.env.WORKER_ID ?? process.env.HOSTNAME ?? 'worker',

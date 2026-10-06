@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
 import { EnvironmentVariables } from '@app/config';
 import { HttpExceptionFilter } from '@app/common';
@@ -22,6 +23,25 @@ async function bootstrap(): Promise<void> {
   );
   app.enableShutdownHooks();
   const configService = app.get(ConfigService<EnvironmentVariables>);
+  if (configService.getOrThrow('app.swagger_enabled', { infer: true })) {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('Credit Flow API')
+      .setDescription(
+        'Asynchronous user credit and payment processing API. Money values are integer تومان/ریال units.',
+      )
+      .setVersion('1.0')
+      .addApiKey(
+        { type: 'apiKey', name: 'x-admin-api-key', in: 'header' },
+        'adminApiKey',
+      )
+      .build();
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup(
+      configService.getOrThrow('app.swagger_path', { infer: true }),
+      app,
+      document,
+    );
+  }
   const corsOrigins = configService.getOrThrow('app.cors_origins', { infer: true });
   app.enableCors({
     origin: corsOrigins.length > 0 ? corsOrigins : false,

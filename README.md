@@ -28,6 +28,12 @@ The API listens on `APP_PORT` (default `3000`) and the worker exposes its health
 endpoint on `WORKER_PORT` (default `3001`). Health checks are available at
 `/health` on both processes.
 
+OpenAPI documentation is served at `/docs` by default when
+`APP_SWAGGER_ENABLED=true`; the path can be changed with `APP_SWAGGER_PATH`.
+The Swagger document includes the admin API key header scheme for `/admin/*`
+endpoints. Disable it in production unless the documentation endpoint is
+explicitly needed.
+
 Payment submission uses `POST /payments` with the `Idempotency-Key` header.
 Reusing the same key with the same payload returns the existing payment
 request; reusing it with a different payload returns a conflict. The key is

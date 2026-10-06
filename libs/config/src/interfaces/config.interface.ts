@@ -6,6 +6,8 @@ export interface EnvironmentVariables {
     domain?: string;
     api_prefix: string;
     cors_origins: string[];
+    swagger_enabled: boolean;
+    swagger_path: string;
   };
   worker: {
     id: string;

@@ -4,6 +4,8 @@ export const envValidationSchema = Joi.object({
   APP_ID: Joi.string().default('credit-flow'),
   APP_PORT: Joi.number().port().default(3000),
   APP_DOMAIN: Joi.string().allow('').optional(),
+  APP_SWAGGER_ENABLED: Joi.boolean().truthy('true').falsy('false').default(true),
+  APP_SWAGGER_PATH: Joi.string().pattern(/^[a-zA-Z0-9/_-]+$/).default('docs'),
   CORS_ORIGINS: Joi.string().allow('').optional(),
   NODE_ENV: Joi.string()
     .valid('development', 'test', 'production')
