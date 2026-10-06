@@ -6,6 +6,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ErrorCode } from '../errors/error-code.enum';
+import { isObject, isString } from '../utils/check.util';
 
 interface RequestWithId {
   id?: string;
@@ -26,7 +27,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const exceptionResponse =
       exception instanceof HttpException ? exception.getResponse() : undefined;
     const rawMessage =
-      typeof exceptionResponse === 'object' && exceptionResponse !== null
+      isObject(exceptionResponse)
         ? (exceptionResponse as { message?: string | string[] }).message
         : exception instanceof HttpException
           ? exception.message
@@ -47,7 +48,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
   }
 }
 
-function toErrorCode(value: string | undefined): string {
+function toErrorCode(value: unknown): string {
+  if (!isString(value)) {
+    return ErrorCode.INTERNAL_SERVER_ERROR;
+  }
   return (
     value
       ?.trim()

@@ -7,7 +7,7 @@ import { HealthModule } from '@app/health';
 import { MessagingModule } from '@app/messaging';
 import { PrismaModule } from '@app/prisma';
 import { RedisModule } from '@app/redis';
-import { HttpExceptionFilter } from '@app/common';
+import { HttpExceptionFilter, isString } from '@app/common';
 import { UsersModule } from './users/users.module';
 import { PaymentsModule } from './payments/payments.module';
 import { AdminModule } from './admin/admin.module';
@@ -32,7 +32,7 @@ import { AdminModule } from './admin/admin.module';
           level: configService.getOrThrow('logging.level', { infer: true }),
           genReqId: (request) => {
             const requestId = request.headers['x-request-id'];
-            return typeof requestId === 'string' ? requestId : randomUUID();
+            return isString(requestId) ? requestId : randomUUID();
           },
           customProps: (request) => ({ requestId: request.id }),
         },
