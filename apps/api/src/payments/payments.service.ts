@@ -5,7 +5,7 @@ import {
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { PaymentEvent, PaymentStatus } from '@app/common';
+import { ErrorCode, PaymentEvent, PaymentStatus } from '@app/common';
 import {
   PaymentRequestRepository,
   UserRepository,
@@ -36,10 +36,10 @@ export class PaymentsService {
   ): Promise<PaymentSubmissionResponseDto> {
     const key = idempotencyKey?.trim();
     if (!key) {
-      throw new BadRequestException('Idempotency-Key header is required');
+      throw new BadRequestException(ErrorCode.IDEMPOTENCY_KEY_REQUIRED);
     }
     if (!Number.isSafeInteger(dto.amount) || dto.amount <= 0) {
-      throw new BadRequestException('Amount must be a positive integer');
+      throw new BadRequestException(ErrorCode.AMOUNT_MUST_BE_POSITIVE_INTEGER);
     }
 
     const existing = await this.payments.findByIdempotencyKey(key);
@@ -58,14 +58,14 @@ export class PaymentsService {
       if (racedPayment) {
         return this.resolveExisting(racedPayment, dto);
       }
-      throw new ConflictException('Payment request is already being created');
+      throw new ConflictException(ErrorCode.PAYMENT_ALREADY_BEING_CREATED);
     }
 
     let cacheResult = false;
     try {
       const user = await this.users.findById(dto.userId);
       if (!user) {
-        throw new NotFoundException('User not found');
+        throw new NotFoundException(ErrorCode.USER_NOT_FOUND);
       }
 
       const paymentRequest = await this.payments.createWithCreatedEvent({
@@ -85,9 +85,7 @@ export class PaymentsService {
           attempt: paymentRequest.retryCount,
         });
       } catch {
-        throw new ServiceUnavailableException(
-          'Payment queue is temporarily unavailable',
-        );
+        throw new ServiceUnavailableException(ErrorCode.PAYMENT_QUEUE_UNAVAILABLE);
       }
 
       const transitioned = await this.payments.transitionStatusWithEvent(
@@ -99,7 +97,7 @@ export class PaymentsService {
         0,
       );
       if (!transitioned) {
-        throw new ConflictException('Payment status changed concurrently');
+        throw new ConflictException(ErrorCode.PAYMENT_STATUS_CHANGED_CONCURRENTLY);
       }
 
       await this.redis.set(
@@ -123,7 +121,7 @@ export class PaymentsService {
   async findById(id: string): Promise<PaymentDetailsResponseDto> {
     const payment = await this.payments.findById(id);
     if (!payment) {
-      throw new NotFoundException('Payment request not found');
+      throw new NotFoundException(ErrorCode.PAYMENT_NOT_FOUND);
     }
 
     return this.toDetailsResponse(payment);
@@ -132,7 +130,7 @@ export class PaymentsService {
   async findEvents(id: string): Promise<PaymentEventResponseDto[]> {
     const payment = await this.payments.findById(id);
     if (!payment) {
-      throw new NotFoundException('Payment request not found');
+      throw new NotFoundException(ErrorCode.PAYMENT_NOT_FOUND);
     }
 
     const events = await this.payments.findEventsByPaymentRequestId(id);
@@ -152,7 +150,7 @@ export class PaymentsService {
   ): Promise<PaymentListResponseDto> {
     const user = await this.users.findById(userId);
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException(ErrorCode.USER_NOT_FOUND);
     }
 
     const { items, total } = await this.payments.findByUser(userId, {
@@ -176,7 +174,7 @@ export class PaymentsService {
   async cancel(id: string): Promise<PaymentDetailsResponseDto> {
     const payment = await this.payments.findById(id);
     if (!payment) {
-      throw new NotFoundException('Payment request not found');
+      throw new NotFoundException(ErrorCode.PAYMENT_NOT_FOUND);
     }
 
     const cancelledFromPending = await this.payments.transitionStatusWithEvent(
@@ -197,9 +195,7 @@ export class PaymentsService {
       ));
 
     if (!cancelled) {
-      throw new ConflictException(
-        'Payment can only be cancelled while PENDING or QUEUED',
-      );
+      throw new ConflictException(ErrorCode.PAYMENT_CANNOT_BE_CANCELLED);
     }
 
     return this.findById(id);
@@ -224,9 +220,7 @@ export class PaymentsService {
       (existing.description ?? undefined) === dto.description;
 
     if (!matches) {
-      throw new ConflictException(
-        'Idempotency-Key was already used with a different payload',
-      );
+      throw new ConflictException(ErrorCode.IDEMPOTENCY_KEY_PAYLOAD_CONFLICT);
     }
 
     return this.toResponse(existing);

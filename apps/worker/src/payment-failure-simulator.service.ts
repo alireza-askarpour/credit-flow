@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EnvironmentVariables } from '@app/config';
-import { FailureType, PaymentProcessingError } from '@app/common';
+import { ErrorCode, FailureType, PaymentProcessingError } from '@app/common';
 
 @Injectable()
 export class PaymentFailureSimulator {
@@ -18,17 +18,15 @@ export class PaymentFailureSimulator {
     const reference = payment.reference.toUpperCase();
     if (reference.includes('FAIL_TECH')) {
       throw new PaymentProcessingError(
-        'Simulated technical failure',
+        ErrorCode.SIMULATED_TECHNICAL_FAILURE,
         FailureType.TECHNICAL,
-        'SIMULATED_TECHNICAL_FAILURE',
       );
     }
 
     if (reference.includes('FAIL')) {
       throw new PaymentProcessingError(
-        'Simulated business failure',
+        ErrorCode.SIMULATED_BUSINESS_FAILURE,
         FailureType.BUSINESS,
-        'SIMULATED_BUSINESS_FAILURE',
       );
     }
 
@@ -41,9 +39,8 @@ export class PaymentFailureSimulator {
 
     if (this.random(payment.reference, simulation.seed) < probability) {
       throw new PaymentProcessingError(
-        'Simulated amount-based technical failure',
+        ErrorCode.SIMULATED_AMOUNT_FAILURE,
         FailureType.TECHNICAL,
-        'SIMULATED_AMOUNT_FAILURE',
       );
     }
   }

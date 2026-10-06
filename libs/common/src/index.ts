@@ -8,6 +8,7 @@ export * from './enums/payment-status.enum';
 export * from './enums/failure-type.enum';
 export * from './enums/transaction-type.enum';
 export * from './errors/domain.error';
+export * from './errors/error-code.enum';
 export * from './errors/idempotency.error';
 export * from './errors/payment-state-transition.error';
 export * from './errors/payment-processing.error';

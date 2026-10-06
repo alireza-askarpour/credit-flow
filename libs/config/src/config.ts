@@ -1,4 +1,5 @@
 import { EnvironmentVariables } from './interfaces/config.interface';
+import { ErrorCode } from '@app/common';
 
 const parseBoolean = (value: string | undefined, fallback = false): boolean =>
   value === undefined ? fallback : value === 'true';
@@ -11,7 +12,7 @@ const parseNumber = (value: string | undefined, fallback: number): number => {
 const required = (name: string): string => {
   const value = process.env[name];
   if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
+    throw new Error(`${ErrorCode.MISSING_ENVIRONMENT_VARIABLE}_${name}`);
   }
   return value;
 };

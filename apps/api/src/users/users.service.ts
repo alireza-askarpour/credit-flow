@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { UserRepository } from '@app/prisma';
+import { ErrorCode } from '@app/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { CreditUserDto } from './dto/credit-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
@@ -18,7 +19,7 @@ export class UsersService {
       dto.initialBalance !== undefined &&
       !Number.isSafeInteger(dto.initialBalance)
     ) {
-      throw new BadRequestException('Initial balance must be a safe integer');
+      throw new BadRequestException(ErrorCode.INITIAL_BALANCE_MUST_BE_SAFE_INTEGER);
     }
     const initialBalance = dto.initialBalance
       ? BigInt(dto.initialBalance)
@@ -35,7 +36,7 @@ export class UsersService {
   async findById(id: string): Promise<UserResponseDto> {
     const user = await this.users.findById(id);
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException(ErrorCode.USER_NOT_FOUND);
     }
 
     return this.toResponse(user);
@@ -43,12 +44,12 @@ export class UsersService {
 
   async credit(id: string, dto: CreditUserDto): Promise<UserResponseDto> {
     if (!Number.isSafeInteger(dto.amount) || dto.amount <= 0) {
-      throw new BadRequestException('Amount must be a positive integer');
+      throw new BadRequestException(ErrorCode.AMOUNT_MUST_BE_POSITIVE_INTEGER);
     }
 
     const existingUser = await this.users.findById(id);
     if (!existingUser) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException(ErrorCode.USER_NOT_FOUND);
     }
 
     const user = await this.users.creditWithTransaction(

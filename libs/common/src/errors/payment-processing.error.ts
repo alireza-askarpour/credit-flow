@@ -1,22 +1,21 @@
 import { FailureType } from '../enums/failure-type.enum';
 import { DomainError } from './domain.error';
+import { ErrorCode } from './error-code.enum';
 
 export class PaymentProcessingError extends DomainError {
   constructor(
-    message: string,
-    public readonly failureType: FailureType,
     code: string,
+    public readonly failureType: FailureType,
   ) {
-    super(message, code);
+    super(code, code);
   }
 }
 
 export class InsufficientBalanceError extends PaymentProcessingError {
   constructor() {
     super(
-      'User balance is insufficient',
+      ErrorCode.INSUFFICIENT_BALANCE,
       FailureType.BUSINESS,
-      'INSUFFICIENT_BALANCE',
     );
   }
 }

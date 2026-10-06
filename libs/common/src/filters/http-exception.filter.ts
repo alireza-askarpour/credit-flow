@@ -5,6 +5,7 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
+import { ErrorCode } from '../errors/error-code.enum';
 
 interface RequestWithId {
   id?: string;
@@ -24,21 +25,34 @@ export class HttpExceptionFilter implements ExceptionFilter {
         : HttpStatus.INTERNAL_SERVER_ERROR;
     const exceptionResponse =
       exception instanceof HttpException ? exception.getResponse() : undefined;
-    const message =
+    const rawMessage =
       typeof exceptionResponse === 'object' && exceptionResponse !== null
         ? (exceptionResponse as { message?: string | string[] }).message
         : exception instanceof HttpException
           ? exception.message
-          : 'Internal server error';
+          : ErrorCode.INTERNAL_SERVER_ERROR;
+    const message = Array.isArray(rawMessage)
+      ? rawMessage.map(toErrorCode).join(',')
+      : toErrorCode(rawMessage);
 
     response.status(status).json({
       success: false,
       error: {
         code: `HTTP_${status}`,
-        message: Array.isArray(message) ? message.join(', ') : message,
+        message,
       },
       requestId: request.id,
       timestamp: new Date().toISOString(),
     });
   }
+}
+
+function toErrorCode(value: string | undefined): string {
+  return (
+    value
+      ?.trim()
+      .replace(/[^A-Za-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .toUpperCase() || ErrorCode.INTERNAL_SERVER_ERROR
+  );
 }

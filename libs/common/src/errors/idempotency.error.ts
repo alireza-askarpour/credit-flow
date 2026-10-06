@@ -1,10 +1,11 @@
 import { DomainError } from './domain.error';
+import { ErrorCode } from './error-code.enum';
 
 export class IdempotencyConflictError extends DomainError {
   constructor(idempotencyKey: string) {
     super(
-      `A payment already exists for idempotency key ${idempotencyKey}`,
-      'PAYMENT_IDEMPOTENCY_CONFLICT',
+      ErrorCode.PAYMENT_IDEMPOTENCY_CONFLICT,
+      ErrorCode.PAYMENT_IDEMPOTENCY_CONFLICT,
       { idempotencyKey },
     );
   }

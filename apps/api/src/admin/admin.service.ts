@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PaymentStatus, TransactionType } from '@app/common';
+import { ErrorCode, PaymentStatus, TransactionType } from '@app/common';
 import { AdminReportRepository, AdminReportPeriod } from '@app/prisma';
 import { RedisService } from '@app/redis';
 import { AdminPaginationQueryDto } from './dto/admin-pagination-query.dto';
@@ -71,7 +71,7 @@ export class AdminService {
 
   async getUser(id: string) {
     const result = await this.reports.findUserAccount(id);
-    if (!result) throw new NotFoundException('User not found');
+    if (!result) throw new NotFoundException(ErrorCode.USER_NOT_FOUND);
 
     const credited = this.sumByType(result.transactionSummary, TransactionType.CREDIT);
     const debited = this.sumByType(result.transactionSummary, TransactionType.DEBIT);
@@ -93,7 +93,7 @@ export class AdminService {
 
   async listUserTransactions(id: string, query: AdminTransactionQueryDto) {
     const user = await this.reports.findUserAccount(id);
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) throw new NotFoundException(ErrorCode.USER_NOT_FOUND);
 
     const result = await this.reports.findUserTransactions(id, {
       page: query.page,

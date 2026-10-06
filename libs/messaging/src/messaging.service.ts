@@ -17,6 +17,7 @@ import {
   QUEUE_PREFETCH_COUNT,
   PaymentJobDto,
 } from '@app/common';
+import { ErrorCode } from '@app/common';
 import { EnvironmentVariables } from '@app/config';
 
 @Injectable()
@@ -50,7 +51,7 @@ export class MessagingService implements OnModuleInit, OnModuleDestroy {
 
   async publishPaymentJob(job: PaymentJobDto): Promise<void> {
     if (!this.channel) {
-      throw new Error('RabbitMQ channel is not initialized');
+      throw new Error(ErrorCode.RABBITMQ_CHANNEL_NOT_INITIALIZED);
     }
 
     const published = this.channel.publish(
@@ -78,14 +79,14 @@ export class MessagingService implements OnModuleInit, OnModuleDestroy {
     headers: Record<string, unknown>,
   ): Promise<void> {
     if (!this.channel) {
-      throw new Error('RabbitMQ channel is not initialized');
+      throw new Error(ErrorCode.RABBITMQ_CHANNEL_NOT_INITIALIZED);
     }
 
     const retryQueue =
       PAYMENT_RETRY_QUEUES.find((queue) => queue.delayMs >= delayMs) ??
       PAYMENT_RETRY_QUEUES[PAYMENT_RETRY_QUEUES.length - 1];
     if (!retryQueue) {
-      throw new Error('RabbitMQ retry topology is not configured');
+      throw new Error(ErrorCode.RABBITMQ_RETRY_TOPOLOGY_NOT_CONFIGURED);
     }
     const published = this.channel.publish(
       PAYMENT_RETRY_EXCHANGE,
@@ -111,7 +112,7 @@ export class MessagingService implements OnModuleInit, OnModuleDestroy {
     headers: Record<string, unknown>,
   ): Promise<void> {
     if (!this.channel) {
-      throw new Error('RabbitMQ channel is not initialized');
+      throw new Error(ErrorCode.RABBITMQ_CHANNEL_NOT_INITIALIZED);
     }
 
     const published = this.channel.publish(
@@ -137,7 +138,7 @@ export class MessagingService implements OnModuleInit, OnModuleDestroy {
     handler: (job: PaymentJobDto) => Promise<'ack' | 'requeue' | 'reject'>,
   ): Promise<void> {
     if (!this.channel) {
-      throw new Error('RabbitMQ channel is not initialized');
+      throw new Error(ErrorCode.RABBITMQ_CHANNEL_NOT_INITIALIZED);
     }
 
     await this.channel.prefetch(QUEUE_PREFETCH_COUNT);
@@ -166,7 +167,7 @@ export class MessagingService implements OnModuleInit, OnModuleDestroy {
 
   private async setupTopology(): Promise<void> {
     if (!this.channel) {
-      throw new Error('RabbitMQ channel is not initialized');
+      throw new Error(ErrorCode.RABBITMQ_CHANNEL_NOT_INITIALIZED);
     }
 
     await this.channel.assertExchange(PAYMENT_EXCHANGE, 'direct', {

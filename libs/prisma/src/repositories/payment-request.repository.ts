@@ -10,6 +10,7 @@ import {
   FailureType,
   InsufficientBalanceError,
   PaymentStatus,
+  ErrorCode,
 } from '@app/common';
 import { PaymentEventRepository } from './payment-event.repository';
 import { PrismaService } from '../prisma.service';
@@ -193,7 +194,7 @@ export class PaymentRequestRepository {
       }
       const updatedUser = updatedUsers[0];
       if (!updatedUser) {
-        throw new Error('Updated user balance was not returned');
+        throw new Error(ErrorCode.UPDATED_USER_BALANCE_NOT_RETURNED);
       }
 
       const updatedPayment = await client.paymentRequest.updateMany({
@@ -207,7 +208,7 @@ export class PaymentRequestRepository {
         },
       });
       if (updatedPayment.count !== 1) {
-        throw new Error('Payment was no longer in PROCESSING state');
+        throw new Error(ErrorCode.PAYMENT_NOT_IN_PROCESSING_STATE);
       }
 
       await client.transaction.create({
