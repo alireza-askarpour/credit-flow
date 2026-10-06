@@ -11,10 +11,10 @@ import {
 @Module({
   providers: [
     PrismaService,
-    UserRepository,
     PaymentRequestRepository,
     TransactionRepository,
     PaymentEventRepository,
+    UserRepository,
   ],
   exports: [
     PrismaService,

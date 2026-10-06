@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { TransactionRepository } from './transaction.repository';
 import { PrismaService } from '../prisma.service';
 
 @Injectable()
 export class UserRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly transactions: TransactionRepository,
+  ) {}
 
   findById(id: string) {
     return this.prisma.user.findUnique({ where: { id } });
@@ -43,6 +47,32 @@ export class UserRepository {
         balance: { increment: amount },
         version: { increment: 1 },
       },
+    });
+  }
+
+  async creditWithTransaction(
+    userId: string,
+    amount: bigint,
+    reference: string,
+  ) {
+    return this.prisma.$transaction(async (client) => {
+      const user = await client.user.update({
+        where: { id: userId },
+        data: {
+          balance: { increment: amount },
+          version: { increment: 1 },
+        },
+      });
+
+      await this.transactions.createWithClient(client, {
+        userId,
+        amount,
+        reference,
+        type: 'CREDIT',
+        balanceAfter: user.balance,
+      });
+
+      return user;
     });
   }
 }

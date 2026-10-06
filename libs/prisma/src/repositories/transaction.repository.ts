@@ -10,6 +10,13 @@ export class TransactionRepository {
     return this.prisma.transaction.create({ data });
   }
 
+  createWithClient(
+    client: Prisma.TransactionClient,
+    data: Prisma.TransactionUncheckedCreateInput,
+  ) {
+    return client.transaction.create({ data });
+  }
+
   findDebitByPaymentRequestId(paymentRequestId: string) {
     return this.prisma.transaction.findUnique({
       where: { paymentRequestId },

@@ -37,6 +37,8 @@
     "@nestjs/websockets": "^11.0.0",
     "@prisma/client": "^6.16.2",
     "amqplib": "^0.10.7",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
     "ioredis": "^5.7.0",
     "joi": "^18.0.1",
     "nestjs-pino": "^4.4.0",

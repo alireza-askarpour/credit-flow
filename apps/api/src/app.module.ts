@@ -8,6 +8,7 @@ import { MessagingModule } from '@app/messaging';
 import { PrismaModule } from '@app/prisma';
 import { RedisModule } from '@app/redis';
 import { HttpExceptionFilter } from '@app/common';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { HttpExceptionFilter } from '@app/common';
     RedisModule,
     MessagingModule,
     HealthModule,
+    UsersModule,
   ],
   providers: [HttpExceptionFilter],
 })
