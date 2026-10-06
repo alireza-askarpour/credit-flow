@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 import { randomUUID } from 'node:crypto';
-import { envValidationSchema } from '@app/config';
+import { config, EnvironmentVariables, envValidationSchema } from '@app/config';
 import { HealthModule } from '@app/health';
 import { MessagingModule } from '@app/messaging';
 import { PrismaModule } from '@app/prisma';
@@ -13,18 +13,27 @@ import { HttpExceptionFilter } from '@app/common';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: [
+        `.env.${process.env.NODE_ENV || 'development'}`,
+        '.env',
+      ],
+      load: [config],
       validationSchema: envValidationSchema,
       validationOptions: { allowUnknown: true, abortEarly: false },
     }),
-    LoggerModule.forRoot({
-      pinoHttp: {
-        level: process.env.LOG_LEVEL ?? 'info',
-        genReqId: (request) => {
-          const requestId = request.headers['x-request-id'];
-          return typeof requestId === 'string' ? requestId : randomUUID();
+    LoggerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService<EnvironmentVariables>) => ({
+        pinoHttp: {
+          level: configService.get<string>('logging.level', 'info'),
+          genReqId: (request) => {
+            const requestId = request.headers['x-request-id'];
+            return typeof requestId === 'string' ? requestId : randomUUID();
+          },
+          customProps: (request) => ({ requestId: request.id }),
         },
-        customProps: (request) => ({ requestId: request.id }),
-      },
+      }),
     }),
     PrismaModule,
     RedisModule,
