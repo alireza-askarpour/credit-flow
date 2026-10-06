@@ -248,7 +248,11 @@ export class PaymentRequestRepository {
     });
   }
 
-  async requeueProcessing(paymentId: string, nextRetryAt: Date): Promise<boolean> {
+  async requeueProcessing(
+    paymentId: string,
+    nextRetryAt: Date,
+    metadata: Record<string, unknown>,
+  ): Promise<boolean> {
     return this.prisma.$transaction(async (client) => {
       const result = await client.paymentRequest.updateMany({
         where: {
@@ -270,6 +274,8 @@ export class PaymentRequestRepository {
           paymentRequestId: paymentId,
           eventType: 'RETRY_TRIGGERED',
           newStatus: 'QUEUED',
+          attemptNumber: metadata.attemptNumber as number,
+          metadata,
         },
       });
       return true;

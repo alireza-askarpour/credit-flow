@@ -78,6 +78,13 @@ duplicate or terminal messages as safe no-op acknowledgements. Business
 failures such as insufficient balance are acknowledged without retry; technical
 failures are classified centrally and requeued until `maxAttempts` is reached.
 
+Technical retry policy is three total attempts with jittered backoff based on
+5s, 15s, and 60s intervals. Retry messages go through durable TTL queues and a
+dead-letter exchange; after the final attempt the payment is marked `FAILED`
+with `TECHNICAL` failure type and published to the payment DLQ. Business
+failures are never retried. The retry event stores the attempt number, delay,
+and safe error code in its metadata.
+
 Failure simulation is controlled by `PAYMENT_SIMULATION_ENABLED`,
 `PAYMENT_SIMULATION_MAX_AMOUNT`, and the optional `PAYMENT_SIMULATION_SEED`.
 References containing `FAIL` produce a deterministic business failure with no

@@ -8,7 +8,11 @@ import { ConfigService } from '@nestjs/config';
 import { connect, ChannelModel, ConfirmChannel } from 'amqplib';
 import {
   PAYMENT_EXCHANGE,
+  PAYMENT_DEAD_LETTER_EXCHANGE,
+  PAYMENT_DEAD_LETTER_QUEUE,
   PAYMENT_QUEUE,
+  PAYMENT_RETRY_EXCHANGE,
+  PAYMENT_RETRY_QUEUES,
   PAYMENT_ROUTING_KEYS,
   QUEUE_PREFETCH_COUNT,
   PaymentJobDto,
@@ -68,6 +72,64 @@ export class MessagingService implements OnModuleInit, OnModuleDestroy {
     await this.channel.waitForConfirms();
   }
 
+  async publishPaymentRetry(
+    job: PaymentJobDto,
+    delayMs: number,
+    headers: Record<string, unknown>,
+  ): Promise<void> {
+    if (!this.channel) {
+      throw new Error('RabbitMQ channel is not initialized');
+    }
+
+    const retryQueue =
+      PAYMENT_RETRY_QUEUES.find((queue) => queue.delayMs >= delayMs) ??
+      PAYMENT_RETRY_QUEUES[PAYMENT_RETRY_QUEUES.length - 1];
+    const published = this.channel.publish(
+      PAYMENT_RETRY_EXCHANGE,
+      retryQueue.name,
+      Buffer.from(JSON.stringify(job)),
+      {
+        contentType: 'application/json',
+        deliveryMode: 2,
+        persistent: true,
+        messageId: job.paymentId,
+        headers,
+      },
+    );
+
+    if (!published) {
+      await new Promise<void>((resolve) => this.channel?.once('drain', resolve));
+    }
+    await this.channel.waitForConfirms();
+  }
+
+  async publishPaymentDeadLetter(
+    job: PaymentJobDto,
+    headers: Record<string, unknown>,
+  ): Promise<void> {
+    if (!this.channel) {
+      throw new Error('RabbitMQ channel is not initialized');
+    }
+
+    const published = this.channel.publish(
+      PAYMENT_DEAD_LETTER_EXCHANGE,
+      PAYMENT_ROUTING_KEYS.deadLetter,
+      Buffer.from(JSON.stringify(job)),
+      {
+        contentType: 'application/json',
+        deliveryMode: 2,
+        persistent: true,
+        messageId: job.paymentId,
+        headers,
+      },
+    );
+
+    if (!published) {
+      await new Promise<void>((resolve) => this.channel?.once('drain', resolve));
+    }
+    await this.channel.waitForConfirms();
+  }
+
   async consumePaymentJobs(
     handler: (job: PaymentJobDto) => Promise<'ack' | 'requeue' | 'reject'>,
   ): Promise<void> {
@@ -114,6 +176,37 @@ export class MessagingService implements OnModuleInit, OnModuleDestroy {
       PAYMENT_QUEUE,
       PAYMENT_EXCHANGE,
       PAYMENT_ROUTING_KEYS.process,
+    );
+
+    await this.channel.assertExchange(PAYMENT_RETRY_EXCHANGE, 'direct', {
+      durable: true,
+    });
+    for (const retryQueue of PAYMENT_RETRY_QUEUES) {
+      await this.channel.assertQueue(retryQueue.name, {
+        durable: true,
+        arguments: {
+          'x-message-ttl': retryQueue.delayMs,
+          'x-dead-letter-exchange': PAYMENT_EXCHANGE,
+          'x-dead-letter-routing-key': PAYMENT_ROUTING_KEYS.process,
+        },
+      });
+      await this.channel.bindQueue(
+        retryQueue.name,
+        PAYMENT_RETRY_EXCHANGE,
+        retryQueue.name,
+      );
+    }
+
+    await this.channel.assertExchange(PAYMENT_DEAD_LETTER_EXCHANGE, 'direct', {
+      durable: true,
+    });
+    await this.channel.assertQueue(PAYMENT_DEAD_LETTER_QUEUE, {
+      durable: true,
+    });
+    await this.channel.bindQueue(
+      PAYMENT_DEAD_LETTER_QUEUE,
+      PAYMENT_DEAD_LETTER_EXCHANGE,
+      PAYMENT_ROUTING_KEYS.deadLetter,
     );
   }
 }

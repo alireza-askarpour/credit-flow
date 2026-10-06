@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import {
   classifyPaymentError,
+  calculateRetryDelay,
   FailureType,
   PaymentJobDto,
   PaymentProcessingError,
@@ -52,11 +53,12 @@ export class PaymentWorkerService implements OnModuleInit {
       );
       return 'ack';
     } catch (error) {
-      return this.handleFailure(payment.id, payment.retryCount, payment.maxAttempts, error);
+      return this.handleFailure(job, payment.retryCount, payment.maxAttempts, error);
     }
   }
 
   private async handleFailure(
+    job: PaymentJobDto,
     paymentId: string,
     retryCount: number,
     maxAttempts: number,
@@ -68,15 +70,41 @@ export class PaymentWorkerService implements OnModuleInit {
         ? error.code
         : 'PAYMENT_TECHNICAL_FAILURE';
 
-    if (failureType === FailureType.BUSINESS || retryCount + 1 >= maxAttempts) {
+    const attemptNumber = retryCount + 1;
+    if (failureType === FailureType.BUSINESS) {
       await this.payments.failProcessing(paymentId, failureType, failureCode);
       return 'ack';
     }
 
-    const retryAt = new Date(Date.now() + this.retryDelay(retryCount));
-    await this.payments.requeueProcessing(paymentId, retryAt);
-    this.logger.warn(`Requeueing payment ${paymentId} after technical failure`);
-    return 'requeue';
+    if (attemptNumber >= maxAttempts) {
+      await this.payments.failProcessing(
+        paymentId,
+        FailureType.TECHNICAL,
+        'MAX_RETRIES_EXCEEDED',
+      );
+      await this.messaging.publishPaymentDeadLetter(job, {
+        attemptNumber,
+        errorCode: failureCode,
+      });
+      return 'ack';
+    }
+
+    const delayMs = calculateRetryDelay(attemptNumber);
+    const retryAt = new Date(Date.now() + delayMs);
+    await this.payments.requeueProcessing(paymentId, retryAt, {
+      attemptNumber,
+      delayMs,
+      errorCode: failureCode,
+    });
+    await this.messaging.publishPaymentRetry(job, delayMs, {
+      attemptNumber,
+      delayMs,
+      errorCode: failureCode,
+    });
+    this.logger.warn(
+      `Scheduled retry ${attemptNumber} for payment ${paymentId} in ${delayMs}ms`,
+    );
+    return 'ack';
   }
 
   private isTerminal(status: PaymentStatus): boolean {
@@ -85,9 +113,5 @@ export class PaymentWorkerService implements OnModuleInit {
       PaymentStatus.FAILED,
       PaymentStatus.CANCELLED,
     ].includes(status);
-  }
-
-  private retryDelay(retryCount: number): number {
-    return Math.min(30_000, 1_000 * 2 ** retryCount);
   }
 }
