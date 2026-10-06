@@ -17,6 +17,10 @@
     "resolveJsonModule": true,
     "noImplicitAny": true,
     "noUncheckedIndexedAccess": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "paths": {
+      "@app/prisma": ["libs/prisma/src"],
+      "@app/prisma/*": ["libs/prisma/src/*"]
+    }
   }
 }

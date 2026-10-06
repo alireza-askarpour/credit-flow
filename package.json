@@ -14,7 +14,10 @@
     "start:api": "nest start api",
     "start:worker": "nest start worker",
     "start:dev:api": "nest start api --watch",
-    "start:dev:worker": "nest start worker --watch"
+    "start:dev:worker": "nest start worker --watch",
+    "prisma:generate": "prisma generate --schema libs/prisma/prisma/schema.prisma",
+    "prisma:validate": "prisma validate --schema libs/prisma/prisma/schema.prisma",
+    "prisma:format": "prisma format --schema libs/prisma/prisma/schema.prisma"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
@@ -22,6 +25,7 @@
     "@nestjs/microservices": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
     "@nestjs/websockets": "^11.0.0",
+    "@prisma/client": "^6.16.2",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2"
   },
@@ -30,6 +34,7 @@
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.0",
     "@types/node": "^22.10.0",
+    "prisma": "^6.16.2",
     "typescript": "^5.7.2"
   }
 }
