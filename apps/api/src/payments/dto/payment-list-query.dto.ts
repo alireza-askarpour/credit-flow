@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsDateString, IsEnum, IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsDateString, IsEnum, IsInt, IsOptional, Max, Min, IsString } from 'class-validator';
 import { PaymentStatus } from '@app/common';
 
 export class PaymentListQueryDto {
@@ -29,5 +29,6 @@ export class PaymentListQueryDto {
   dateTo?: string;
 
   @IsOptional()
+  @IsString()
   reference?: string;
 }

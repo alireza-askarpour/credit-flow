@@ -5,15 +5,12 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Max,
   Matches,
   MaxLength,
   Min,
 } from 'class-validator';
-
-const sanitize = ({ value }: { value: unknown }): unknown =>
-  typeof value === 'string'
-    ? value.replace(/[\u0000-\u001F\u007F]/g, '').trim()
-    : value;
+import { sanitizeText } from '../../security/sanitize-input';
 
 export class CreatePaymentDto {
   @IsUUID()
@@ -21,16 +18,18 @@ export class CreatePaymentDto {
 
   @IsInt()
   @Min(1)
+  @Max(Number.MAX_SAFE_INTEGER)
   amount!: number;
 
   @IsString()
   @IsNotEmpty()
   @Matches(/^[A-Za-z0-9_-]{1,64}$/)
+  @Transform(sanitizeText)
   reference!: string;
 
   @IsOptional()
   @IsString()
   @MaxLength(500)
-  @Transform(sanitize)
+  @Transform(sanitizeText)
   description?: string;
 }

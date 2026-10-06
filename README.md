@@ -52,6 +52,15 @@ usage summaries. Aggregate and usage reports are cached in Redis for 30 seconds.
 The aggregate report accepts `daily`, `monthly`, or `yearly` periods and uses
 PostgreSQL `date_trunc` grouping.
 
+Request validation uses a global `ValidationPipe` with transformation, a
+whitelist, and unknown-field rejection. Payment references are restricted to a
+safe allow-list and text inputs are trimmed with control characters removed.
+Money is intentionally represented as PostgreSQL `BIGINT`/JavaScript `bigint`
+in the configured تومان/ریال unit, so no floating-point or decimal conversion
+is used; API amounts must be safe positive integers. The API also configures
+CORS from `CORS_ORIGINS`, secure response headers, and hides internal exception
+messages from unexpected HTTP 500 responses.
+
 Cancellation is accepted only while a payment is `PENDING` or `QUEUED`. Once
 processing has started, the conditional transition fails and the API returns a
 conflict.

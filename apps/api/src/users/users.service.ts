@@ -14,6 +14,12 @@ export class UsersService {
   constructor(private readonly users: UserRepository) {}
 
   async create(dto: CreateUserDto): Promise<UserResponseDto> {
+    if (
+      dto.initialBalance !== undefined &&
+      !Number.isSafeInteger(dto.initialBalance)
+    ) {
+      throw new BadRequestException('Initial balance must be a safe integer');
+    }
     const initialBalance = dto.initialBalance
       ? BigInt(dto.initialBalance)
       : 0n;
