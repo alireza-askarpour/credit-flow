@@ -36,7 +36,7 @@ export class UsersService {
   }
 
   async credit(id: string, dto: CreditUserDto): Promise<UserResponseDto> {
-    if (!/^\d+$/.test(dto.amount) || BigInt(dto.amount) <= 0n) {
+    if (!Number.isSafeInteger(dto.amount) || dto.amount <= 0) {
       throw new BadRequestException('Amount must be a positive integer');
     }
 

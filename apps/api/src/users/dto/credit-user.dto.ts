@@ -1,7 +1,8 @@
-import { IsNotEmpty, Matches } from 'class-validator';
+import { IsInt, IsNotEmpty, Min } from 'class-validator';
 
 export class CreditUserDto {
   @IsNotEmpty()
-  @Matches(/^[1-9]\d*$/)
-  amount!: string;
+  @IsInt()
+  @Min(1)
+  amount!: number;
 }

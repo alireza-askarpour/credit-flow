@@ -9,6 +9,7 @@ import { PrismaModule } from '@app/prisma';
 import { RedisModule } from '@app/redis';
 import { HttpExceptionFilter } from '@app/common';
 import { UsersModule } from './users/users.module';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { UsersModule } from './users/users.module';
     MessagingModule,
     HealthModule,
     UsersModule,
+    PaymentsModule,
   ],
   providers: [HttpExceptionFilter],
 })

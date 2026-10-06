@@ -28,6 +28,19 @@ The API listens on `APP_PORT` (default `3000`) and the worker exposes its health
 endpoint on `WORKER_PORT` (default `3001`). Health checks are available at
 `/health` on both processes.
 
+Payment submission uses `POST /payments` with the `Idempotency-Key` header.
+Reusing the same key with the same payload returns the existing payment
+request; reusing it with a different payload returns a conflict. The key is
+cached briefly in Redis for contention control, while PostgreSQL remains the
+source of truth through its unique constraint.
+
+If a payment row is created but RabbitMQ publishing fails, the API recovery
+cron republishes stale `PENDING` requests every 10 seconds. The transition to
+`QUEUED` is still conditional, so a later duplicate delivery cannot overwrite a
+newer state. The worker should claim `QUEUED` requests through the repository's
+conditional `claimForProcessing` method; only one delivery can win, which makes
+at-least-once RabbitMQ delivery safe.
+
 The API and worker intentionally share PostgreSQL in this scope: both processes
 operate on the same payment state and need transactional consistency. Splitting
 the database would add distributed coordination and data replication concerns

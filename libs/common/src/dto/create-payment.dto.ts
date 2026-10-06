@@ -1,6 +1,6 @@
 export class CreatePaymentDto {
   userId!: string;
-  amount!: string;
+  amount!: number;
   currency!: string;
   idempotencyKey!: string;
 }

@@ -10,6 +10,13 @@ export class PaymentEventRepository {
     return this.prisma.paymentEvent.create({ data });
   }
 
+  createWithClient(
+    client: Prisma.TransactionClient,
+    data: Prisma.PaymentEventUncheckedCreateInput,
+  ) {
+    return client.paymentEvent.create({ data });
+  }
+
   findByPaymentRequestId(paymentRequestId: string) {
     return this.prisma.paymentEvent.findMany({
       where: { paymentRequestId },

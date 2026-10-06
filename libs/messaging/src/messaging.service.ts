@@ -5,7 +5,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { connect, Channel, Connection } from 'amqplib';
+import { connect, ConfirmChannel, Connection } from 'amqplib';
 import {
   PAYMENT_EXCHANGE,
   PAYMENT_QUEUE,
@@ -18,14 +18,14 @@ import { EnvironmentVariables } from '@app/config';
 export class MessagingService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(MessagingService.name);
   private connection?: Connection;
-  private channel?: Channel;
+  private channel?: ConfirmChannel;
   private connected = false;
 
   constructor(private readonly config: ConfigService<EnvironmentVariables>) {}
 
   async onModuleInit(): Promise<void> {
     this.connection = await connect(this.config.getOrThrow<string>('rabbitmq.url'));
-    this.channel = await this.connection.createChannel();
+    this.channel = await this.connection.createConfirmChannel();
     await this.setupTopology();
     this.connected = true;
     this.logger.log('RabbitMQ connection established');
@@ -59,10 +59,10 @@ export class MessagingService implements OnModuleInit, OnModuleDestroy {
     );
 
     if (!published) {
-      await new Promise<void>((resolve) => {
-        this.channel?.once('drain', resolve);
-      });
+      await new Promise<void>((resolve) => this.channel?.once('drain', resolve));
     }
+
+    await this.channel.waitForConfirms();
   }
 
   private async setupTopology(): Promise<void> {
