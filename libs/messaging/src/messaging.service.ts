@@ -17,6 +17,7 @@ export class MessagingService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(MessagingService.name);
   private connection?: Connection;
   private channel?: Channel;
+  private connected = false;
 
   async onModuleInit(): Promise<void> {
     this.connection = await connect(
@@ -24,12 +25,18 @@ export class MessagingService implements OnModuleInit, OnModuleDestroy {
     );
     this.channel = await this.connection.createChannel();
     await this.setupTopology();
+    this.connected = true;
     this.logger.log('RabbitMQ connection established');
   }
 
   async onModuleDestroy(): Promise<void> {
     await this.channel?.close();
     await this.connection?.close();
+    this.connected = false;
+  }
+
+  isHealthy(): boolean {
+    return this.connected;
   }
 
   async publishPaymentJob(job: PaymentJobDto): Promise<void> {
