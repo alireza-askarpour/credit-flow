@@ -28,7 +28,7 @@ import { PaymentsModule } from './payments/payments.module';
       inject: [ConfigService],
       useFactory: (configService: ConfigService<EnvironmentVariables>) => ({
         pinoHttp: {
-          level: configService.get<string>('logging.level', 'info'),
+          level: configService.getOrThrow('logging.level', { infer: true }),
           genReqId: (request) => {
             const requestId = request.headers['x-request-id'];
             return typeof requestId === 'string' ? requestId : randomUUID();

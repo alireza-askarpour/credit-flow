@@ -24,7 +24,7 @@ import { RedisModule } from '@app/redis';
       inject: [ConfigService],
       useFactory: (configService: ConfigService<EnvironmentVariables>) => ({
         pinoHttp: {
-          level: configService.get<string>('logging.level', 'info'),
+          level: configService.getOrThrow('logging.level', { infer: true }),
         },
       }),
     }),

@@ -103,7 +103,6 @@ export class PaymentsService {
       await this.redis.set(
         lockKey,
         paymentRequest.id,
-        'EX',
         IDEMPOTENCY_TTL_SECONDS,
       );
       cacheResult = true;

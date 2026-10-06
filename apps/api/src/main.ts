@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
+import { EnvironmentVariables } from '@app/config';
 import { HttpExceptionFilter } from '@app/common';
 import { ApiModule } from './app.module';
 
@@ -13,8 +14,8 @@ async function bootstrap(): Promise<void> {
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
   );
   app.enableShutdownHooks();
-  const configService = app.get(ConfigService);
-  await app.listen(configService.get<number>('app.port', 3000));
+  const configService = app.get(ConfigService<EnvironmentVariables>);
+  await app.listen(configService.getOrThrow('app.port', { infer: true }));
 }
 
 void bootstrap();

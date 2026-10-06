@@ -8,10 +8,13 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   private readonly client: Redis;
 
   constructor(config: ConfigService<EnvironmentVariables>) {
-    this.client = new Redis(config.getOrThrow<string>('redis.url'), {
-      lazyConnect: true,
-      maxRetriesPerRequest: 3,
-    });
+    this.client = new Redis(
+      config.getOrThrow('redis.url', { infer: true }),
+      {
+        lazyConnect: true,
+        maxRetriesPerRequest: 3,
+      },
+    );
   }
 
   getClient(): Redis {
