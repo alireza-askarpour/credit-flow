@@ -28,6 +28,7 @@ export const config = (): EnvironmentVariables => ({
       : [],
   },
   worker: {
+    id: process.env.WORKER_ID ?? process.env.HOSTNAME ?? 'worker',
     port: parseNumber(process.env.WORKER_PORT, 3001),
   },
   db: {

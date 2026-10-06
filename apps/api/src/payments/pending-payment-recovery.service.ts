@@ -31,14 +31,14 @@ export class PendingPaymentRecoveryService {
           attempt: payment.retryCount,
         });
 
-        const queued = await this.payments.transitionStatus(
+        const queued = await this.payments.transitionStatusWithEvent(
           payment.id,
           PaymentStatus.PENDING,
           PaymentStatus.QUEUED,
+          'QUEUED',
+          { source: 'recovery', failureType: null },
+          payment.retryCount,
         );
-        if (queued) {
-          await this.payments.recordEvent(payment.id, 'QUEUED', 'QUEUED');
-        }
       } catch (error) {
         this.logger.warn(
           `Could not republish pending payment ${payment.id}: ${String(error)}`,

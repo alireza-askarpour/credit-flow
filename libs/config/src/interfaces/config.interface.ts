@@ -8,6 +8,7 @@ export interface EnvironmentVariables {
     cors_origins: string[];
   };
   worker: {
+    id: string;
     port: number;
   };
   db: {

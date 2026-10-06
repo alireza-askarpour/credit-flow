@@ -9,6 +9,7 @@ export const envValidationSchema = Joi.object({
     .valid('development', 'test', 'production')
     .default('development'),
   WORKER_PORT: Joi.number().port().default(3001),
+  WORKER_ID: Joi.string().default('worker'),
   LOG_LEVEL: Joi.string()
     .valid('fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent')
     .default('info'),

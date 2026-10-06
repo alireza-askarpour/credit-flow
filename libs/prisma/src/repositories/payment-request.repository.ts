@@ -10,7 +10,6 @@ import {
   FailureType,
   InsufficientBalanceError,
   PaymentStatus,
-  PaymentTransitionContext,
 } from '@app/common';
 import { PaymentEventRepository } from './payment-event.repository';
 import { PrismaService } from '../prisma.service';
@@ -102,53 +101,64 @@ export class PaymentRequestRepository {
         eventType: PrismaPaymentEventType.CREATED,
         newStatus: PrismaPaymentRequestStatus.PENDING,
         attemptNumber: 0,
+        metadata: { source: 'api' },
       });
 
       return paymentRequest;
     });
   }
 
-  recordEvent(
-    paymentRequestId: string,
-    eventType:
-      | 'QUEUED'
-      | 'PROCESSING_STARTED'
-      | 'SUCCEEDED'
-      | 'FAILED'
-      | 'RETRY_TRIGGERED'
-      | 'CANCELLED',
-    newStatus?: PaymentStatus | PrismaPaymentRequestStatus,
-  ) {
-    return this.events.create({
-      paymentRequestId,
-      eventType: eventType as PrismaPaymentEventType,
-      newStatus: newStatus as PrismaPaymentRequestStatus | undefined,
-    });
-  }
-
-  async transitionStatus(
+  async transitionStatusWithEvent(
     id: string,
     expectedStatus: PaymentStatus,
     nextStatus: PaymentStatus,
-    context: PaymentTransitionContext = {},
+    eventType: string,
+    metadata: Record<string, unknown>,
+    attemptNumber?: number,
   ): Promise<boolean> {
-    assertPaymentTransition(expectedStatus, nextStatus, context);
+    assertPaymentTransition(expectedStatus, nextStatus);
 
-    const result = await this.prisma.paymentRequest.updateMany({
-      where: {
-        id,
-        status: expectedStatus as PrismaPaymentRequestStatus,
-      },
-      data: {
-        status: nextStatus as PrismaPaymentRequestStatus,
-      },
+    return this.prisma.$transaction(async (client) => {
+      const result = await client.paymentRequest.updateMany({
+        where: {
+          id,
+          status: expectedStatus as PrismaPaymentRequestStatus,
+        },
+        data: {
+          status: nextStatus as PrismaPaymentRequestStatus,
+        },
+      });
+      if (result.count !== 1) {
+        return false;
+      }
+
+      await client.paymentEvent.create({
+        data: {
+          paymentRequestId: id,
+          eventType: eventType as PrismaPaymentEventType,
+          previousStatus: expectedStatus as PrismaPaymentRequestStatus,
+          newStatus: nextStatus as PrismaPaymentRequestStatus,
+          attemptNumber,
+          metadata: metadata as Prisma.InputJsonValue,
+        },
+      });
+      return true;
     });
-
-    return result.count === 1;
   }
 
-  claimForProcessing(id: string): Promise<boolean> {
-    return this.transitionStatus(id, PaymentStatus.QUEUED, PaymentStatus.PROCESSING);
+  claimForProcessing(
+    id: string,
+    workerId: string,
+    attemptNumber: number,
+  ): Promise<boolean> {
+    return this.transitionStatusWithEvent(
+      id,
+      PaymentStatus.QUEUED,
+      PaymentStatus.PROCESSING,
+      'PROCESSING_STARTED',
+      { workerId, failureType: null },
+      attemptNumber,
+    );
   }
 
   incrementRetry(id: string, nextRetryAt: Date) {
@@ -166,6 +176,8 @@ export class PaymentRequestRepository {
     userId: string,
     amount: bigint,
     reference: string,
+    workerId: string,
+    attemptNumber: number,
   ): Promise<void> {
     await this.prisma.$transaction(async (client) => {
       const updatedUsers = await client.$queryRaw<Array<{ balance: bigint }>>`
@@ -209,7 +221,10 @@ export class PaymentRequestRepository {
         data: {
           paymentRequestId: paymentId,
           eventType: 'SUCCEEDED',
+          previousStatus: 'PROCESSING',
           newStatus: 'SUCCEEDED',
+          attemptNumber,
+          metadata: { workerId, failureType: null },
         },
       });
     });
@@ -219,6 +234,8 @@ export class PaymentRequestRepository {
     paymentId: string,
     failureType: FailureType,
     failureCode: string,
+    workerId: string,
+    attemptNumber: number,
   ): Promise<boolean> {
     return this.prisma.$transaction(async (client) => {
       const result = await client.paymentRequest.updateMany({
@@ -241,7 +258,14 @@ export class PaymentRequestRepository {
         data: {
           paymentRequestId: paymentId,
           eventType: 'FAILED',
+          previousStatus: 'PROCESSING',
           newStatus: 'FAILED',
+          attemptNumber,
+          metadata: {
+            workerId,
+            failureType,
+            errorCode: failureCode,
+          },
         },
       });
       return true;
@@ -252,6 +276,7 @@ export class PaymentRequestRepository {
     paymentId: string,
     nextRetryAt: Date,
     metadata: Record<string, unknown>,
+    workerId: string,
   ): Promise<boolean> {
     return this.prisma.$transaction(async (client) => {
       const result = await client.paymentRequest.updateMany({
@@ -273,9 +298,10 @@ export class PaymentRequestRepository {
         data: {
           paymentRequestId: paymentId,
           eventType: 'RETRY_TRIGGERED',
+          previousStatus: 'PROCESSING',
           newStatus: 'QUEUED',
           attemptNumber: metadata.attemptNumber as number,
-          metadata,
+          metadata: { ...metadata, workerId } as Prisma.InputJsonValue,
         },
       });
       return true;

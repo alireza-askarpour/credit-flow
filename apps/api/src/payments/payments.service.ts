@@ -90,20 +90,18 @@ export class PaymentsService {
         );
       }
 
-      const transitioned = await this.payments.transitionStatus(
+      const transitioned = await this.payments.transitionStatusWithEvent(
         paymentRequest.id,
         PaymentStatus.PENDING,
         PaymentStatus.QUEUED,
+        'QUEUED',
+        { source: 'api', failureType: null },
+        0,
       );
       if (!transitioned) {
         throw new ConflictException('Payment status changed concurrently');
       }
 
-      await this.payments.recordEvent(
-        paymentRequest.id,
-        'QUEUED',
-        'QUEUED',
-      );
       await this.redis.set(
         lockKey,
         paymentRequest.id,
@@ -181,17 +179,21 @@ export class PaymentsService {
       throw new NotFoundException('Payment request not found');
     }
 
-    const cancelledFromPending = await this.payments.transitionStatus(
+    const cancelledFromPending = await this.payments.transitionStatusWithEvent(
       id,
       PaymentStatus.PENDING,
       PaymentStatus.CANCELLED,
+      'CANCELLED',
+      { source: 'api', failureType: null },
     );
     const cancelled =
       cancelledFromPending ||
-      (await this.payments.transitionStatus(
+      (await this.payments.transitionStatusWithEvent(
         id,
         PaymentStatus.QUEUED,
         PaymentStatus.CANCELLED,
+        'CANCELLED',
+        { source: 'api', failureType: null },
       ));
 
     if (!cancelled) {
@@ -200,7 +202,6 @@ export class PaymentsService {
       );
     }
 
-    await this.payments.recordEvent(id, 'CANCELLED', 'CANCELLED');
     return this.findById(id);
   }
 
