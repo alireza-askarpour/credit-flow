@@ -7,11 +7,21 @@ import {
   PaymentJobDto,
   PaymentProcessingError,
   PaymentStatus,
+  ErrorCode,
+  isIn,
+  isNil,
+  MessageOutcome,
 } from '@app/common';
 import { EnvironmentVariables } from '@app/config';
 import { MessagingService } from '@app/messaging';
 import { PaymentRequestRepository } from '@app/prisma';
 import { PaymentFailureSimulator } from './payment-failure-simulator.service';
+
+const TERMINAL_PAYMENT_STATUSES = [
+  PaymentStatus.SUCCEEDED,
+  PaymentStatus.FAILED,
+  PaymentStatus.CANCELLED,
+] as const;
 
 @Injectable()
 export class PaymentWorkerService implements OnModuleInit {
@@ -33,10 +43,10 @@ export class PaymentWorkerService implements OnModuleInit {
 
   private async process(
     job: PaymentJobDto,
-  ): Promise<'ack' | 'requeue' | 'reject'> {
+  ): Promise<MessageOutcome> {
     const payment = await this.payments.findById(job.paymentId);
-    if (!payment || this.isTerminal(payment.status as PaymentStatus)) {
-      return 'ack';
+    if (isNil(payment) || isIn(payment.status, TERMINAL_PAYMENT_STATUSES)) {
+      return MessageOutcome.ACK;
     }
 
     const attemptNumber = payment.retryCount + 1;
@@ -46,7 +56,7 @@ export class PaymentWorkerService implements OnModuleInit {
       attemptNumber,
     );
     if (!claimed) {
-      return 'ack';
+      return MessageOutcome.ACK;
     }
 
     try {
@@ -59,7 +69,7 @@ export class PaymentWorkerService implements OnModuleInit {
         this.workerId,
         attemptNumber,
       );
-      return 'ack';
+      return MessageOutcome.ACK;
     } catch (error) {
       return this.handleFailure(
         job,
@@ -77,12 +87,12 @@ export class PaymentWorkerService implements OnModuleInit {
     maxAttempts: number,
     attemptNumber: number,
     error: unknown,
-  ): Promise<'ack' | 'requeue' | 'reject'> {
+  ): Promise<MessageOutcome> {
     const failureType = classifyPaymentError(error);
     const failureCode =
       error instanceof PaymentProcessingError
         ? error.code
-        : 'PAYMENT_TECHNICAL_FAILURE';
+        : ErrorCode.PAYMENT_TECHNICAL_FAILURE;
 
     if (failureType === FailureType.BUSINESS) {
       await this.payments.failProcessing(
@@ -92,14 +102,14 @@ export class PaymentWorkerService implements OnModuleInit {
         this.workerId,
         attemptNumber,
       );
-      return 'ack';
+      return MessageOutcome.ACK;
     }
 
     if (attemptNumber >= maxAttempts) {
       await this.payments.failProcessing(
         paymentId,
         FailureType.TECHNICAL,
-        'MAX_RETRIES_EXCEEDED',
+        ErrorCode.MAX_RETRIES_EXCEEDED,
         this.workerId,
         attemptNumber,
       );
@@ -107,7 +117,7 @@ export class PaymentWorkerService implements OnModuleInit {
         attemptNumber,
         errorCode: failureCode,
       });
-      return 'ack';
+      return MessageOutcome.ACK;
     }
 
     const delayMs = calculateRetryDelay(attemptNumber);
@@ -125,14 +135,6 @@ export class PaymentWorkerService implements OnModuleInit {
     this.logger.warn(
       `Scheduled retry ${attemptNumber} for payment ${paymentId} in ${delayMs}ms`,
     );
-    return 'ack';
-  }
-
-  private isTerminal(status: PaymentStatus): boolean {
-    return [
-      PaymentStatus.SUCCEEDED,
-      PaymentStatus.FAILED,
-      PaymentStatus.CANCELLED,
-    ].includes(status);
+    return MessageOutcome.ACK;
   }
 }

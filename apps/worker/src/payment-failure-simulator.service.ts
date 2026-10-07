@@ -1,7 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EnvironmentVariables } from '@app/config';
-import { ErrorCode, FailureType, PaymentProcessingError } from '@app/common';
+import {
+  ErrorCode,
+  FailureType,
+  isNil,
+  isFalse,
+  PaymentProcessingError,
+} from '@app/common';
 
 @Injectable()
 export class PaymentFailureSimulator {
@@ -11,7 +17,7 @@ export class PaymentFailureSimulator {
 
   async run(payment: { amount: bigint; reference: string }): Promise<void> {
     const simulation = this.config.getOrThrow('simulation', { infer: true });
-    if (!simulation.enabled) {
+    if (isFalse(simulation.enabled)) {
       return;
     }
 
@@ -46,7 +52,7 @@ export class PaymentFailureSimulator {
   }
 
   private random(reference: string, seed?: string): number {
-    if (!seed) {
+    if (isNil(seed)) {
       return Math.random();
     }
 

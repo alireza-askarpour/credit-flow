@@ -4,6 +4,8 @@ import {
   PaymentEventType as PrismaPaymentEventType,
   FailureType as PrismaFailureType,
   Prisma,
+  PaymentEvent,
+  PaymentRequest,
 } from '@prisma/client';
 import {
   assertPaymentTransition,
@@ -23,11 +25,11 @@ export class PaymentRequestRepository {
     private readonly events: PaymentEventRepository,
   ) {}
 
-  findById(id: string) {
+  findById(id: string): Promise<PaymentRequest | null> {
     return this.prisma.paymentRequest.findUnique({ where: { id } });
   }
 
-  findEventsByPaymentRequestId(paymentRequestId: string) {
+  findEventsByPaymentRequestId(paymentRequestId: string): Promise<PaymentEvent[]> {
     return this.prisma.paymentEvent.findMany({
       where: { paymentRequestId },
       orderBy: { createdAt: 'asc' },
@@ -73,13 +75,16 @@ export class PaymentRequestRepository {
     return { items, total };
   }
 
-  findByIdempotencyKey(idempotencyKey: string) {
+  findByIdempotencyKey(idempotencyKey: string): Promise<PaymentRequest | null> {
     return this.prisma.paymentRequest.findUnique({
       where: { idempotencyKey },
     });
   }
 
-  findPendingCreatedBefore(createdBefore: Date, limit = 100) {
+  findPendingCreatedBefore(
+    createdBefore: Date,
+    limit = 100,
+  ): Promise<PaymentRequest[]> {
     return this.prisma.paymentRequest.findMany({
       where: {
         status: PrismaPaymentRequestStatus.PENDING,
@@ -90,11 +95,15 @@ export class PaymentRequestRepository {
     });
   }
 
-  create(data: Prisma.PaymentRequestUncheckedCreateInput) {
+  create(
+    data: Prisma.PaymentRequestUncheckedCreateInput,
+  ): Promise<PaymentRequest> {
     return this.prisma.paymentRequest.create({ data });
   }
 
-  async createWithCreatedEvent(data: Prisma.PaymentRequestUncheckedCreateInput) {
+  async createWithCreatedEvent(
+    data: Prisma.PaymentRequestUncheckedCreateInput,
+  ): Promise<PaymentRequest> {
     return this.prisma.$transaction(async (client) => {
       const paymentRequest = await client.paymentRequest.create({ data });
 
@@ -157,13 +166,13 @@ export class PaymentRequestRepository {
       id,
       PaymentStatus.QUEUED,
       PaymentStatus.PROCESSING,
-      'PROCESSING_STARTED',
+      PrismaPaymentEventType.PROCESSING_STARTED,
       { workerId, failureType: null },
       attemptNumber,
     );
   }
 
-  incrementRetry(id: string, nextRetryAt: Date) {
+  incrementRetry(id: string, nextRetryAt: Date): Promise<PaymentRequest> {
     return this.prisma.paymentRequest.update({
       where: { id },
       data: {
@@ -226,9 +235,9 @@ export class PaymentRequestRepository {
       await client.paymentEvent.create({
         data: {
           paymentRequestId: paymentId,
-          eventType: 'SUCCEEDED',
-          previousStatus: 'PROCESSING',
-          newStatus: 'SUCCEEDED',
+          eventType: PrismaPaymentEventType.SUCCEEDED,
+          previousStatus: PrismaPaymentRequestStatus.PROCESSING,
+          newStatus: PrismaPaymentRequestStatus.SUCCEEDED,
           attemptNumber,
           metadata: { workerId, failureType: null },
         },
@@ -263,9 +272,9 @@ export class PaymentRequestRepository {
       await client.paymentEvent.create({
         data: {
           paymentRequestId: paymentId,
-          eventType: 'FAILED',
-          previousStatus: 'PROCESSING',
-          newStatus: 'FAILED',
+          eventType: PrismaPaymentEventType.FAILED,
+          previousStatus: PrismaPaymentRequestStatus.PROCESSING,
+          newStatus: PrismaPaymentRequestStatus.FAILED,
           attemptNumber,
           metadata: {
             workerId,
@@ -303,9 +312,9 @@ export class PaymentRequestRepository {
       await client.paymentEvent.create({
         data: {
           paymentRequestId: paymentId,
-          eventType: 'RETRY_TRIGGERED',
-          previousStatus: 'PROCESSING',
-          newStatus: 'QUEUED',
+          eventType: PrismaPaymentEventType.RETRY_TRIGGERED,
+          previousStatus: PrismaPaymentRequestStatus.PROCESSING,
+          newStatus: PrismaPaymentRequestStatus.QUEUED,
           attemptNumber: metadata.attemptNumber as number,
           metadata: { ...metadata, workerId } as Prisma.InputJsonValue,
         },

@@ -16,6 +16,7 @@ import {
   PAYMENT_ROUTING_KEYS,
   QUEUE_PREFETCH_COUNT,
   PaymentJobDto,
+  MessageOutcome,
 } from '@app/common';
 import { ErrorCode } from '@app/common';
 import { EnvironmentVariables } from '@app/config';
@@ -135,7 +136,7 @@ export class MessagingService implements OnModuleInit, OnModuleDestroy {
   }
 
   async consumePaymentJobs(
-    handler: (job: PaymentJobDto) => Promise<'ack' | 'requeue' | 'reject'>,
+    handler: (job: PaymentJobDto) => Promise<MessageOutcome>,
   ): Promise<void> {
     if (!this.channel) {
       throw new Error(ErrorCode.RABBITMQ_CHANNEL_NOT_INITIALIZED);
@@ -151,9 +152,9 @@ export class MessagingService implements OnModuleInit, OnModuleDestroy {
         const job = JSON.parse(message.content.toString()) as PaymentJobDto;
         const outcome = await handler(job);
 
-        if (outcome === 'ack') {
+        if (outcome === MessageOutcome.ACK) {
           this.channel?.ack(message);
-        } else if (outcome === 'requeue') {
+        } else if (outcome === MessageOutcome.REQUEUE) {
           this.channel?.nack(message, false, true);
         } else {
           this.channel?.nack(message, false, false);

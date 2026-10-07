@@ -6,6 +6,7 @@ export * from './dto/payment-response.dto';
 export * from './enums/payment-event.enum';
 export * from './enums/payment-status.enum';
 export * from './enums/failure-type.enum';
+export * from './enums/message-outcome.enum';
 export * from './enums/transaction-type.enum';
 export * from './errors/domain.error';
 export * from './errors/error-code.enum';
