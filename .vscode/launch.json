@@ -2,33 +2,33 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug API",
+      "name": "Debug API (compiled)",
       "type": "node",
       "request": "launch",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "start:debug:api"],
+      "program": "${workspaceFolder}/dist/apps/api/apps/api/src/main.js",
+      "runtimeArgs": ["--inspect-brk=9229"],
+      "preLaunchTask": "build:api",
       "env": {
         "NODE_ENV": "development"
       },
       "console": "integratedTerminal",
-      "restart": true,
-      "autoAttachChildProcesses": true,
       "sourceMaps": true,
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
       "skipFiles": ["<node_internals>/**"]
     },
     {
-      "name": "Debug Worker",
+      "name": "Debug Worker (compiled)",
       "type": "node",
       "request": "launch",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "start:debug:worker"],
+      "program": "${workspaceFolder}/dist/apps/worker/apps/worker/src/main.js",
+      "runtimeArgs": ["--inspect-brk=9230"],
+      "preLaunchTask": "build:worker",
       "env": {
         "NODE_ENV": "development"
       },
       "console": "integratedTerminal",
-      "restart": true,
-      "autoAttachChildProcesses": true,
       "sourceMaps": true,
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
       "skipFiles": ["<node_internals>/**"]
     }
   ]

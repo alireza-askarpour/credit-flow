@@ -1,0 +1,19 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build:api",
+      "type": "npm",
+      "script": "build:api",
+      "problemMatcher": ["$tsc"],
+      "group": "build"
+    },
+    {
+      "label": "build:worker",
+      "type": "npm",
+      "script": "build:worker",
+      "problemMatcher": ["$tsc"],
+      "group": "build"
+    }
+  ]
+}
