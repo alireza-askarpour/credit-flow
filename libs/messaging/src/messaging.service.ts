@@ -1,23 +1,25 @@
 import {
-  Injectable,
   Logger,
-  OnModuleDestroy,
+  Injectable,
   OnModuleInit,
+  OnModuleDestroy,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+
 import { connect, ChannelModel, ConfirmChannel } from 'amqplib';
+
 import {
-  PAYMENT_EXCHANGE,
-  PAYMENT_DEAD_LETTER_EXCHANGE,
-  PAYMENT_DEAD_LETTER_QUEUE,
+  isEqual,
+  PaymentJobDto,
   PAYMENT_QUEUE,
-  PAYMENT_RETRY_EXCHANGE,
+  MessageOutcome,
+  PAYMENT_EXCHANGE,
   PAYMENT_RETRY_QUEUES,
   PAYMENT_ROUTING_KEYS,
   QUEUE_PREFETCH_COUNT,
-  PaymentJobDto,
-  MessageOutcome,
-  isEqual,
+  PAYMENT_RETRY_EXCHANGE,
+  PAYMENT_DEAD_LETTER_QUEUE,
+  PAYMENT_DEAD_LETTER_EXCHANGE,
 } from '@app/common';
 import { ErrorCode } from '@app/common';
 import { EnvironmentVariables } from '@app/config';
