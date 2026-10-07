@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
+import { TransactionType } from '@app/common';
 import { TransactionRepository } from './transaction.repository';
 import { PrismaService } from '../prisma.service';
 
@@ -10,15 +11,15 @@ export class UserRepository {
     private readonly transactions: TransactionRepository,
   ) {}
 
-  findById(id: string) {
+  findById(id: string): Promise<User | null> {
     return this.prisma.user.findUnique({ where: { id } });
   }
 
-  findByEmail(email: string) {
+  findByEmail(email: string): Promise<User | null> {
     return this.prisma.user.findUnique({ where: { email } });
   }
 
-  create(data: Prisma.UserUncheckedCreateInput) {
+  create(data: Prisma.UserUncheckedCreateInput): Promise<User> {
     return this.prisma.user.create({ data });
   }
 
@@ -40,7 +41,7 @@ export class UserRepository {
     return result.count === 1;
   }
 
-  credit(userId: string, amount: bigint) {
+  credit(userId: string, amount: bigint): Promise<User> {
     return this.prisma.user.update({
       where: { id: userId },
       data: {
@@ -54,7 +55,7 @@ export class UserRepository {
     userId: string,
     amount: bigint,
     reference: string,
-  ) {
+  ): Promise<User> {
     return this.prisma.$transaction(async (client) => {
       const user = await client.user.update({
         where: { id: userId },
@@ -68,7 +69,7 @@ export class UserRepository {
         userId,
         amount,
         reference,
-        type: 'CREDIT',
+        type: TransactionType.CREDIT,
         balanceAfter: user.balance,
       });
 

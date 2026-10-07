@@ -11,6 +11,7 @@ import {
   InsufficientBalanceError,
   PaymentStatus,
   ErrorCode,
+  TransactionType,
 } from '@app/common';
 import { PaymentEventRepository } from './payment-event.repository';
 import { PrismaService } from '../prisma.service';
@@ -217,7 +218,7 @@ export class PaymentRequestRepository {
           paymentRequestId: paymentId,
           amount,
           reference,
-          type: 'DEBIT',
+          type: TransactionType.DEBIT,
           balanceAfter: updatedUser.balance,
         },
       });
