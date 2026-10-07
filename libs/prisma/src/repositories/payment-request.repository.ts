@@ -130,12 +130,6 @@ export class PaymentRequestRepository {
     });
   }
 
-  create(
-    data: Prisma.PaymentRequestUncheckedCreateInput,
-  ): Promise<PaymentRequest> {
-    return this.prisma.paymentRequest.create({ data });
-  }
-
   async createWithCreatedEvent(
     data: Prisma.PaymentRequestUncheckedCreateInput,
   ): Promise<PaymentRequest> {
@@ -248,16 +242,6 @@ export class PaymentRequestRepository {
       { workerId, failureType: null },
       attemptNumber,
     );
-  }
-
-  incrementRetry(id: string, nextRetryAt: Date): Promise<PaymentRequest> {
-    return this.prisma.paymentRequest.update({
-      where: { id },
-      data: {
-        retryCount: { increment: 1 },
-        nextRetryAt,
-      },
-    });
   }
 
   async completeSuccessfulPayment(

@@ -25,7 +25,6 @@ import { MessagingService } from '@app/messaging';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { PaymentListQueryDto } from './dto/payment-list-query.dto';
 import { PaymentListResponseDto } from './dto/payment-list-response.dto';
-import { PaymentEventResponseDto } from './dto/payment-event-response.dto';
 import { PaymentEventListResponseDto } from './dto/payment-event-list-response.dto';
 import { PaymentDetailsResponseDto } from './dto/payment-details-response.dto';
 import { PaymentSubmissionResponseDto } from './dto/payment-submission-response.dto';

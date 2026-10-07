@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import {
   $Enums,
   Prisma,
-  PaymentRequest,
   Transaction,
   User,
 } from '@prisma/client';

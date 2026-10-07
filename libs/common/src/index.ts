@@ -2,7 +2,6 @@ export * from './constants/queue.constants';
 export * from './constants/retry.constants';
 export * from './dto/create-payment.dto';
 export * from './dto/payment-job.dto';
-export * from './dto/payment-response.dto';
 export * from './enums/payment-event.enum';
 export * from './enums/payment-status.enum';
 export * from './enums/failure-type.enum';

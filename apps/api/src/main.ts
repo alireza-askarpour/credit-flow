@@ -8,7 +8,6 @@ import {
   hasLength,
   HttpExceptionFilter,
   HttpResponseInterceptor,
-  isString,
 } from '@app/common';
 import { securityHeadersMiddleware } from './security/security-headers.middleware';
 import { ApiModule } from './app.module';

@@ -31,7 +31,7 @@ export class PendingPaymentRecoveryService {
           attempt: payment.retryCount,
         });
 
-        const queued = await this.payments.transitionStatusWithEvent(
+        await this.payments.transitionStatusWithEvent(
           payment.id,
           PaymentStatus.PENDING,
           PaymentStatus.QUEUED,

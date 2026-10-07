@@ -21,16 +21,6 @@ const REPORT_PERIOD_MAP: Record<AdminReportPeriodDto, AdminReportPeriod> = {
   [AdminReportPeriodDto.YEARLY]: 'yearly',
 };
 
-interface AdminUserRecord {
-  id: string;
-  name: string;
-  email: string;
-  balance: bigint;
-  version: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 interface AdminTransactionRecord {
   id: string;
   userId: string;
