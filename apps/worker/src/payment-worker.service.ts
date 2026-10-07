@@ -3,8 +3,8 @@ import { ConfigService } from '@nestjs/config';
 
 import {
   isIn,
-  isEqual,
   isNil,
+  isEqual,
   ErrorCode,
   FailureType,
   PaymentStatus,
@@ -119,21 +119,30 @@ export class PaymentWorkerService implements OnModuleInit {
       return MessageOutcome.ACK;
     }
 
+    await this.scheduleRetry(job, paymentId, attemptNumber, failureCode);
+    return MessageOutcome.ACK;
+  }
+
+  private async scheduleRetry(
+    job: PaymentJobDto,
+    paymentId: string,
+    attemptNumber: number,
+    errorCode: string,
+  ): Promise<void> {
     const delayMs = calculateRetryDelay(attemptNumber);
     const retryAt = new Date(Date.now() + delayMs);
-    await this.payments.requeueProcessing(paymentId, retryAt, {
-      attemptNumber,
-      delayMs,
-      errorCode: failureCode,
-    }, this.workerId);
-    await this.messaging.publishPaymentRetry(job, delayMs, {
-      attemptNumber,
-      delayMs,
-      errorCode: failureCode,
-    });
+    const retryMetadata = { attemptNumber, delayMs, errorCode };
+
+    await this.payments.requeueProcessing(
+      paymentId,
+      retryAt,
+      retryMetadata,
+      this.workerId,
+    );
+    await this.messaging.publishPaymentRetry(job, delayMs, retryMetadata);
+
     this.logger.warn(
       `Scheduled retry ${attemptNumber} for payment ${paymentId} in ${delayMs}ms`,
     );
-    return MessageOutcome.ACK;
   }
 }
