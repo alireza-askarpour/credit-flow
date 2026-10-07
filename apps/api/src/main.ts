@@ -9,7 +9,7 @@ import { securityHeadersMiddleware } from './security/security-headers.middlewar
 import { ApiModule } from './app.module';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(ApiModule);
+  const app = await NestFactory.create(ApiModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
   app.use(securityHeadersMiddleware);
   app.useGlobalFilters(new HttpExceptionFilter());

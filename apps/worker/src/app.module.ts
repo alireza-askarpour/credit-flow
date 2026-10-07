@@ -8,6 +8,7 @@ import { PrismaModule } from '@app/prisma';
 import { RedisModule } from '@app/redis';
 import { PaymentFailureSimulator } from './payment-failure-simulator.service';
 import { PaymentWorkerService } from './payment-worker.service';
+import { createWorkerPinoConfig } from './logging/pino.config';
 
 @Module({
   imports: [
@@ -25,9 +26,12 @@ import { PaymentWorkerService } from './payment-worker.service';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService<EnvironmentVariables>) => ({
-        pinoHttp: {
-          level: configService.getOrThrow('logging.level', { infer: true }),
-        },
+        pinoHttp: createWorkerPinoConfig({
+          app: { mode: configService.getOrThrow('app.mode', { infer: true }) },
+          logging: {
+            level: configService.getOrThrow('logging.level', { infer: true }),
+          },
+        }),
       }),
     }),
     PrismaModule,

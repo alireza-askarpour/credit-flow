@@ -5,7 +5,7 @@ import { EnvironmentVariables } from '@app/config';
 import { WorkerModule } from './app.module';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(WorkerModule);
+  const app = await NestFactory.create(WorkerModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
   app.enableShutdownHooks();
   const configService = app.get(ConfigService<EnvironmentVariables>);
