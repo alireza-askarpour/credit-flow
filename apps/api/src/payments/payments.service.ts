@@ -47,19 +47,12 @@ export class PaymentsService {
       return this.resolveExisting(existing, dto);
     }
 
-    const lockKey = `payment:idempotency:${key}`;
-    const lock = await this.redis.setIfAbsent(
-      lockKey,
-      'locked',
-      IDEMPOTENCY_TTL_SECONDS,
-    );
-    if (!lock) {
-      const racedPayment = await this.payments.findByIdempotencyKey(key);
-      if (racedPayment) {
-        return this.resolveExisting(racedPayment, dto);
-      }
-      throw new ConflictException(ErrorCode.PAYMENT_ALREADY_BEING_CREATED);
+    const existingPayment = await this.acquireIdempotencyLock(key, dto);
+    if (existingPayment) {
+      return existingPayment;
     }
+
+    const lockKey = this.getIdempotencyLockKey(key);
 
     let cacheResult = false;
     try {
@@ -224,6 +217,35 @@ export class PaymentsService {
     }
 
     return this.toResponse(existing);
+  }
+
+  private async acquireIdempotencyLock(
+    idempotencyKey: string,
+    dto: CreatePaymentDto,
+  ): Promise<PaymentSubmissionResponseDto | undefined> {
+    const lockKey = this.getIdempotencyLockKey(idempotencyKey);
+    const lock = await this.redis.setIfAbsent(
+      lockKey,
+      'locked',
+      IDEMPOTENCY_TTL_SECONDS,
+    );
+
+    if (lock) {
+      return undefined;
+    }
+
+    const racedPayment = await this.payments.findByIdempotencyKey(
+      idempotencyKey,
+    );
+    if (racedPayment) {
+      return this.resolveExisting(racedPayment, dto);
+    }
+
+    throw new ConflictException(ErrorCode.PAYMENT_ALREADY_BEING_CREATED);
+  }
+
+  private getIdempotencyLockKey(idempotencyKey: string): string {
+    return `payment:idempotency:${idempotencyKey}`;
   }
 
   private toResponse(payment: {
