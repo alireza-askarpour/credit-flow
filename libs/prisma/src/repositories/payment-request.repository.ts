@@ -9,6 +9,7 @@ import {
   assertPaymentTransition,
   FailureType,
   InsufficientBalanceError,
+  PaymentNotInProcessingStateError,
   PaymentStatus,
   ErrorCode,
   TransactionType,
@@ -286,7 +287,7 @@ export class PaymentRequestRepository {
         },
       });
       if (!isEqual(updatedPayment.count, 1)) {
-        throw new Error(ErrorCode.PAYMENT_NOT_IN_PROCESSING_STATE);
+        throw new PaymentNotInProcessingStateError();
       }
 
       await client.transaction.create({
