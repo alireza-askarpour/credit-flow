@@ -21,6 +21,9 @@ interface RetryMetadata {
   attemptNumber: number;
   delayMs: number;
   errorCode: string;
+  originalErrorCode: string;
+  errorMessage: string;
+  failureType: FailureType;
 }
 
 const PAYMENT_STATUS_MAP: Record<
@@ -316,6 +319,8 @@ export class PaymentRequestRepository {
     failureCode: string,
     workerId: string,
     attemptNumber: number,
+    errorMessage: string,
+    originalErrorCode?: string,
   ): Promise<boolean> {
     return this.prisma.$transaction(async (client) => {
       const result = await client.paymentRequest.updateMany({
@@ -345,6 +350,8 @@ export class PaymentRequestRepository {
             workerId,
             failureType,
             errorCode: failureCode,
+            errorMessage,
+            originalErrorCode: originalErrorCode ?? failureCode,
           },
         },
       });

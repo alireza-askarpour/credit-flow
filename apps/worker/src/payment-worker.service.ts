@@ -12,7 +12,9 @@ import {
   MessageOutcome,
   calculateRetryDelay,
   classifyPaymentError,
+  resolvePaymentErrorMessage,
   resolvePaymentErrorCode,
+  resolvePaymentErrorOriginalCode,
 } from '@app/common';
 import { MessagingService } from '@app/messaging';
 import { EnvironmentVariables } from '@app/config';
@@ -92,6 +94,15 @@ export class PaymentWorkerService implements OnModuleInit {
   ): Promise<MessageOutcome> {
     const failureType = classifyPaymentError(error);
     const failureCode = resolvePaymentErrorCode(error);
+    const originalErrorCode = resolvePaymentErrorOriginalCode(error);
+    const failureMessage = resolvePaymentErrorMessage(error);
+    this.logger.error(
+      `Payment ${paymentId} failed: ${JSON.stringify({
+        failureType,
+        errorCode: failureCode,
+        errorMessage: failureMessage,
+      })}`,
+    );
 
     if (isEqual(failureType, FailureType.BUSINESS)) {
       await this.payments.failProcessing(
@@ -100,6 +111,7 @@ export class PaymentWorkerService implements OnModuleInit {
         failureCode,
         this.workerId,
         attemptNumber,
+        failureMessage,
       );
       return MessageOutcome.ACK;
     }
@@ -111,6 +123,8 @@ export class PaymentWorkerService implements OnModuleInit {
         ErrorCode.MAX_RETRIES_EXCEEDED,
         this.workerId,
         attemptNumber,
+        failureMessage,
+        originalErrorCode,
       );
       await this.messaging.publishPaymentDeadLetter(job, {
         attemptNumber,
@@ -119,7 +133,15 @@ export class PaymentWorkerService implements OnModuleInit {
       return MessageOutcome.ACK;
     }
 
-    await this.scheduleRetry(job, paymentId, attemptNumber, failureCode);
+    await this.scheduleRetry(
+      job,
+      paymentId,
+      attemptNumber,
+      failureType,
+      failureCode,
+      originalErrorCode,
+      failureMessage,
+    );
     return MessageOutcome.ACK;
   }
 
@@ -127,11 +149,21 @@ export class PaymentWorkerService implements OnModuleInit {
     job: PaymentJobDto,
     paymentId: string,
     attemptNumber: number,
+    failureType: FailureType,
     errorCode: string,
+    originalErrorCode: string,
+    errorMessage: string,
   ): Promise<void> {
     const delayMs = calculateRetryDelay(attemptNumber);
     const retryAt = new Date(Date.now() + delayMs);
-    const retryMetadata = { attemptNumber, delayMs, errorCode };
+    const retryMetadata = {
+      attemptNumber,
+      delayMs,
+      errorCode,
+      originalErrorCode,
+      errorMessage,
+      failureType,
+    };
 
     await this.payments.requeueProcessing(
       paymentId,
