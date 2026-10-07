@@ -1,14 +1,17 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+
 import { LoggerModule } from 'nestjs-pino';
-import { config, EnvironmentVariables, envValidationSchema } from '@app/config';
-import { HealthModule } from '@app/health';
-import { MessagingModule } from '@app/messaging';
-import { PrismaModule } from '@app/prisma';
+
 import { RedisModule } from '@app/redis';
-import { PaymentFailureSimulator } from './payment-failure-simulator.service';
-import { PaymentWorkerService } from './payment-worker.service';
+import { HealthModule } from '@app/health';
+import { PrismaModule } from '@app/prisma';
+import { MessagingModule } from '@app/messaging';
+import { config, EnvironmentVariables, envValidationSchema } from '@app/config';
+
 import { createWorkerPinoConfig } from './logging/pino.config';
+import { PaymentWorkerService } from './payment-worker.service';
+import { PaymentFailureSimulator } from './payment-failure-simulator.service';
 
 @Module({
   imports: [
