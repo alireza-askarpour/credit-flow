@@ -4,6 +4,7 @@ import {
   ExceptionFilter,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { ErrorCode } from '../errors/error-code.enum';
 import { isArrayFull, isObject, isString } from '../utils/check.util';
@@ -14,6 +15,8 @@ interface RequestWithId {
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger(HttpExceptionFilter.name);
+
   catch(exception: unknown, host: ArgumentsHost): void {
     const context = host.switchToHttp();
     const response = context.getResponse<{
@@ -35,6 +38,14 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const message = isArrayFull(rawMessage)
       ? rawMessage.map(toErrorCode).join(',')
       : toErrorCode(rawMessage);
+
+    if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
+      this.logger.error(
+        exception instanceof Error
+          ? exception.stack ?? exception.message
+          : exception,
+      );
+    }
 
     response.status(status).json({
       success: false,
