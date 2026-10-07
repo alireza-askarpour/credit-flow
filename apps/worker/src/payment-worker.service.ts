@@ -23,7 +23,7 @@ const TERMINAL_PAYMENT_STATUSES = [
   PaymentStatus.SUCCEEDED,
   PaymentStatus.FAILED,
   PaymentStatus.CANCELLED,
-] as const;
+];
 
 @Injectable()
 export class PaymentWorkerService implements OnModuleInit {

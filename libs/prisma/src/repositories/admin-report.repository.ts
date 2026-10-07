@@ -1,15 +1,29 @@
 import { Injectable } from '@nestjs/common';
 import {
-  PaymentRequestStatus as PrismaPaymentRequestStatus,
+  $Enums,
   Prisma,
-  TransactionType as PrismaTransactionType,
   PaymentRequest,
   Transaction,
   User,
 } from '@prisma/client';
+import { PaymentStatus, TransactionType } from '@app/common';
 import { PrismaService } from '../prisma.service';
 
 export type AdminReportPeriod = 'daily' | 'monthly' | 'yearly';
+
+const TRANSACTION_TYPE_MAP: Record<TransactionType, $Enums.TransactionType> = {
+  [TransactionType.CREDIT]: $Enums.TransactionType.CREDIT,
+  [TransactionType.DEBIT]: $Enums.TransactionType.DEBIT,
+};
+
+const PAYMENT_STATUS_MAP: Record<PaymentStatus, $Enums.PaymentRequestStatus> = {
+  [PaymentStatus.PENDING]: $Enums.PaymentRequestStatus.PENDING,
+  [PaymentStatus.QUEUED]: $Enums.PaymentRequestStatus.QUEUED,
+  [PaymentStatus.PROCESSING]: $Enums.PaymentRequestStatus.PROCESSING,
+  [PaymentStatus.SUCCEEDED]: $Enums.PaymentRequestStatus.SUCCEEDED,
+  [PaymentStatus.FAILED]: $Enums.PaymentRequestStatus.FAILED,
+  [PaymentStatus.CANCELLED]: $Enums.PaymentRequestStatus.CANCELLED,
+};
 
 export interface AdminPaginationOptions {
   page: number;
@@ -112,7 +126,7 @@ export class AdminReportRepository {
   async findUserTransactions(
     userId: string,
     options: AdminPaginationOptions & {
-      type?: 'CREDIT' | 'DEBIT';
+      type?: TransactionType;
       dateFrom?: Date;
       dateTo?: Date;
     },
@@ -120,7 +134,7 @@ export class AdminReportRepository {
     const where: Prisma.TransactionWhereInput = {
       userId,
       type: options.type
-        ? (options.type as PrismaTransactionType)
+        ? this.toPrismaTransactionType(options.type)
         : undefined,
       createdAt:
         options.dateFrom || options.dateTo
@@ -223,11 +237,11 @@ export class AdminReportRepository {
   }
 
   async findPayments(
-    options: AdminPaginationOptions & { status?: string },
+    options: AdminPaginationOptions & { status?: PaymentStatus },
   ): Promise<{ items: AdminPayment[]; total: number }> {
     const where: Prisma.PaymentRequestWhereInput = {
       status: options.status
-        ? (options.status as PrismaPaymentRequestStatus)
+        ? this.toPrismaPaymentStatus(options.status)
         : undefined,
     };
     const [items, total] = await this.prisma.$transaction([
@@ -241,5 +255,15 @@ export class AdminReportRepository {
       this.prisma.paymentRequest.count({ where }),
     ]);
     return { items, total };
+  }
+
+  private toPrismaTransactionType(type: TransactionType): $Enums.TransactionType {
+    return TRANSACTION_TYPE_MAP[type];
+  }
+
+  private toPrismaPaymentStatus(
+    status: PaymentStatus,
+  ): $Enums.PaymentRequestStatus {
+    return PAYMENT_STATUS_MAP[status];
   }
 }

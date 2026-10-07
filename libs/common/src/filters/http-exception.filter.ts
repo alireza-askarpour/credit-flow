@@ -29,12 +29,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
         : HttpStatus.INTERNAL_SERVER_ERROR;
     const exceptionResponse =
       exception instanceof HttpException ? exception.getResponse() : undefined;
-    const rawMessage =
-      isObject(exceptionResponse)
-        ? (exceptionResponse as { message?: string | string[] }).message
-        : exception instanceof HttpException
-          ? exception.message
-          : ErrorCode.INTERNAL_SERVER_ERROR;
+    const rawMessage = getExceptionMessage(exceptionResponse, exception);
     const message = isArrayFull(rawMessage)
       ? rawMessage.map(toErrorCode).join(',')
       : toErrorCode(rawMessage);
@@ -57,6 +52,19 @@ export class HttpExceptionFilter implements ExceptionFilter {
       timestamp: new Date().toISOString(),
     });
   }
+}
+
+function getExceptionMessage(
+  response: string | object | undefined,
+  exception: unknown,
+): unknown {
+  if (isObject(response)) {
+    return 'message' in response ? response.message : undefined;
+  }
+  if (exception instanceof HttpException) {
+    return exception.message;
+  }
+  return ErrorCode.INTERNAL_SERVER_ERROR;
 }
 
 function toErrorCode(value: unknown): string {

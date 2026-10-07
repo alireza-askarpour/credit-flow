@@ -1,5 +1,5 @@
 export const DEFAULT_MAX_ATTEMPTS = 3;
-export const RETRY_BACKOFFS_MS = [5_000, 15_000, 60_000] as const;
+export const RETRY_BACKOFFS_MS = [5_000, 15_000, 60_000];
 export const RETRY_JITTER_RATIO = 0.2;
 
 export function calculateRetryDelay(

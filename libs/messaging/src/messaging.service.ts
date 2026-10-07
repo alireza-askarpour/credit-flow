@@ -22,6 +22,10 @@ import {
 import { ErrorCode } from '@app/common';
 import { EnvironmentVariables } from '@app/config';
 
+const parsePaymentJob = (payload: string): PaymentJobDto => {
+  return JSON.parse(payload);
+};
+
 @Injectable()
 export class MessagingService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(MessagingService.name);
@@ -150,7 +154,7 @@ export class MessagingService implements OnModuleInit, OnModuleDestroy {
       }
 
       try {
-        const job = JSON.parse(message.content.toString()) as PaymentJobDto;
+        const job = parsePaymentJob(message.content.toString());
         const outcome = await handler(job);
 
         if (isEqual(outcome, MessageOutcome.ACK)) {

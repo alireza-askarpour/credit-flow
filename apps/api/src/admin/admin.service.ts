@@ -10,9 +10,18 @@ import { RedisService } from '@app/redis';
 import { AdminPaginationQueryDto } from './dto/admin-pagination-query.dto';
 import { AdminTransactionQueryDto } from './dto/admin-transaction-query.dto';
 import { AdminPaymentQueryDto } from './dto/admin-payment-query.dto';
-import { AggregateReportQueryDto } from './dto/aggregate-report-query.dto';
+import {
+  AdminReportPeriodDto,
+  AggregateReportQueryDto,
+} from './dto/aggregate-report-query.dto';
 
 const REPORT_CACHE_TTL_SECONDS = 30;
+
+const REPORT_PERIOD_MAP: Record<AdminReportPeriodDto, AdminReportPeriod> = {
+  [AdminReportPeriodDto.DAILY]: 'daily',
+  [AdminReportPeriodDto.MONTHLY]: 'monthly',
+  [AdminReportPeriodDto.YEARLY]: 'yearly',
+};
 
 interface AdminUserRecord {
   id: string;
@@ -69,7 +78,7 @@ export class AdminService {
   async listUsers(query: AdminPaginationQueryDto) {
     const result = await this.reports.findUsers(query);
     return {
-      items: (result.items as AdminUserRecord[]).map((user) => this.toUser(user)),
+      items: result.items.map((user) => this.toUser(user)),
       ...this.pagination(query, result.total),
     };
   }
@@ -108,7 +117,7 @@ export class AdminService {
       dateTo: query.dateTo ? new Date(query.dateTo) : undefined,
     });
     return {
-      items: (result.items as AdminTransactionRecord[]).map((transaction) => ({
+      items: result.items.map((transaction: AdminTransactionRecord) => ({
         ...transaction,
         amount: transaction.amount.toString(),
         balanceAfter: transaction.balanceAfter?.toString(),
@@ -121,11 +130,11 @@ export class AdminService {
     const key = `admin:reports:aggregate:${this.cacheSuffix(query)}`;
     return this.cached(key, async () => {
       const rows = await this.reports.aggregateTransactions(
-        query.period as AdminReportPeriod,
+        this.toReportPeriod(query.period),
         query.from ? new Date(query.from) : undefined,
         query.to ? new Date(query.to) : undefined,
       );
-      return (rows as AggregateRow[]).map((row) => ({
+      return rows.map((row: AggregateRow) => ({
         period: row.period,
         totalCredits: this.bigIntString(row.total_credits),
         totalDebits: this.bigIntString(row.total_debits),
@@ -138,7 +147,7 @@ export class AdminService {
   async usage() {
     return this.cached('admin:reports:usage', async () => {
       const rows = await this.reports.usageByUser();
-      return (rows as UsageRow[]).map((row) => {
+      return rows.map((row: UsageRow) => {
         const credited = this.bigIntString(row.total_credited);
         const debited = this.bigIntString(row.total_debited);
         return {
@@ -164,7 +173,7 @@ export class AdminService {
   async listPayments(query: AdminPaymentQueryDto) {
     const result = await this.reports.findPayments(query);
     return {
-      items: (result.items as Array<Record<string, unknown> & { amount: bigint }>).map((payment) => ({
+      items: result.items.map((payment) => ({
         ...payment,
         amount: payment.amount.toString(),
         failureReason: undefined,
@@ -175,7 +184,7 @@ export class AdminService {
 
   private async cached<T>(key: string, factory: () => Promise<T>): Promise<T> {
     const cached = await this.redis.get(key);
-    if (cached) return JSON.parse(cached) as T;
+    if (cached) return JSON.parse(cached);
     const value = await factory();
     await this.redis.set(key, JSON.stringify(value), REPORT_CACHE_TTL_SECONDS);
     return value;
@@ -214,7 +223,8 @@ export class AdminService {
   private groupCount(
     count: { _all?: number } | boolean | null | undefined,
   ): number {
-    return isObject(count) ? (count as { _all?: number })._all ?? 0 : 0;
+    if (!isObject(count) || !('_all' in count)) return 0;
+    return typeof count._all === 'number' ? count._all : 0;
   }
 
   private bigIntString(value: bigint | null | undefined): string {
@@ -225,5 +235,9 @@ export class AdminService {
     const credit = Number(credited ?? 0n);
     if (isEqual(credit, 0)) return 0;
     return Number(((Number(debited ?? 0n) / credit) * 100).toFixed(2));
+  }
+
+  private toReportPeriod(period: AdminReportPeriodDto): AdminReportPeriod {
+    return REPORT_PERIOD_MAP[period];
   }
 }

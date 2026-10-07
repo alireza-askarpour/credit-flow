@@ -3,11 +3,10 @@ import { IncomingMessage, ServerResponse } from 'node:http';
 import { createPinoTransport } from '@app/config';
 import { isString } from '@app/common';
 
-type RequestLike = IncomingMessage;
+type RequestLike = IncomingMessage & { id?: unknown };
 type ResponseLike = ServerResponse<IncomingMessage>;
 
-const requestIdOf = (request: RequestLike): unknown =>
-  (request as RequestLike & { id?: unknown }).id;
+const requestIdOf = (request: RequestLike): unknown => request.id;
 
 export const createApiPinoHttpConfig = (
   environment: { app: { mode: string }; logging: { level: string } },

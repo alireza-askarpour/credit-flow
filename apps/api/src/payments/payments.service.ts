@@ -5,7 +5,16 @@ import {
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { ErrorCode, isEqual, PaymentEvent, PaymentStatus } from '@app/common';
+import {
+  $Enums,
+} from '@prisma/client';
+import {
+  ErrorCode,
+  isEqual,
+  isNull,
+  PaymentEvent,
+  PaymentStatus,
+} from '@app/common';
 import {
   PaymentRequestRepository,
   UserRepository,
@@ -20,6 +29,15 @@ import { PaymentListResponseDto } from './dto/payment-list-response.dto';
 import { PaymentSubmissionResponseDto } from './dto/payment-submission-response.dto';
 
 const IDEMPOTENCY_TTL_SECONDS = 300;
+
+const PAYMENT_STATUS_MAP: Record<$Enums.PaymentRequestStatus, PaymentStatus> = {
+  [$Enums.PaymentRequestStatus.PENDING]: PaymentStatus.PENDING,
+  [$Enums.PaymentRequestStatus.QUEUED]: PaymentStatus.QUEUED,
+  [$Enums.PaymentRequestStatus.PROCESSING]: PaymentStatus.PROCESSING,
+  [$Enums.PaymentRequestStatus.SUCCEEDED]: PaymentStatus.SUCCEEDED,
+  [$Enums.PaymentRequestStatus.FAILED]: PaymentStatus.FAILED,
+  [$Enums.PaymentRequestStatus.CANCELLED]: PaymentStatus.CANCELLED,
+};
 
 @Injectable()
 export class PaymentsService {
@@ -130,8 +148,8 @@ export class PaymentsService {
     return events.map((event) => ({
       id: event.id,
       eventType: event.eventType,
-      previousStatus: event.previousStatus as PaymentStatus | undefined,
-      newStatus: event.newStatus as PaymentStatus | undefined,
+      previousStatus: this.toPaymentStatus(event.previousStatus),
+      newStatus: this.toPaymentStatus(event.newStatus),
       attemptNumber: event.attemptNumber ?? undefined,
       createdAt: event.createdAt,
     }));
@@ -201,7 +219,7 @@ export class PaymentsService {
       amount: bigint;
       reference: string;
       description: string | null;
-      status: string;
+      status: $Enums.PaymentRequestStatus;
       createdAt: Date;
     },
     dto: CreatePaymentDto,
@@ -216,7 +234,10 @@ export class PaymentsService {
       throw new ConflictException(ErrorCode.IDEMPOTENCY_KEY_PAYLOAD_CONFLICT);
     }
 
-    return this.toResponse(existing);
+    return this.toResponse({
+      ...existing,
+      status: this.toRequiredPaymentStatus(existing.status),
+    });
   }
 
   private async acquireIdempotencyLock(
@@ -250,14 +271,14 @@ export class PaymentsService {
 
   private toResponse(payment: {
     id: string;
-    status: string;
+    status: PaymentStatus;
     amount: bigint;
     reference: string;
     createdAt: Date;
   }): PaymentSubmissionResponseDto {
     return {
       id: payment.id,
-      status: payment.status as PaymentStatus,
+      status: payment.status,
       amount: payment.amount.toString(),
       reference: payment.reference,
       createdAt: payment.createdAt,
@@ -270,8 +291,8 @@ export class PaymentsService {
     amount: bigint;
     reference: string;
     description: string | null;
-    status: string;
-    failureType: string | null;
+    status: $Enums.PaymentRequestStatus;
+    failureType: $Enums.FailureType | null;
     retryCount: number;
     maxAttempts: number;
     nextRetryAt: Date | null;
@@ -287,7 +308,7 @@ export class PaymentsService {
       amount: payment.amount.toString(),
       reference: payment.reference,
       description: payment.description ?? undefined,
-      status: payment.status as PaymentStatus,
+      status: this.toRequiredPaymentStatus(payment.status),
       failureCode: payment.failureType
         ? `PAYMENT_${payment.failureType}_FAILURE`
         : undefined,
@@ -300,5 +321,17 @@ export class PaymentsService {
       createdAt: payment.createdAt,
       updatedAt: payment.updatedAt,
     };
+  }
+
+  private toPaymentStatus(
+    status: $Enums.PaymentRequestStatus | null,
+  ): PaymentStatus | undefined {
+    return isNull(status) ? undefined : PAYMENT_STATUS_MAP[status];
+  }
+
+  private toRequiredPaymentStatus(
+    status: $Enums.PaymentRequestStatus,
+  ): PaymentStatus {
+    return PAYMENT_STATUS_MAP[status];
   }
 }
