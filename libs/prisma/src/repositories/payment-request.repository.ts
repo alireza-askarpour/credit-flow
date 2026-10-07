@@ -131,6 +131,7 @@ export class PaymentRequestRepository {
     assertPaymentTransition(expectedStatus, nextStatus);
 
     return this.prisma.$transaction(async (client) => {
+      const transitionAt = new Date();
       const result = await client.paymentRequest.updateMany({
         where: {
           id,
@@ -138,6 +139,16 @@ export class PaymentRequestRepository {
         },
         data: {
           status: nextStatus as PrismaPaymentRequestStatus,
+          queuedAt: this.getQueuedAt(
+            expectedStatus,
+            nextStatus,
+            transitionAt,
+          ),
+          processingStartedAt: this.getProcessingStartedAt(
+            expectedStatus,
+            nextStatus,
+            transitionAt,
+          ),
         },
       });
       if (!isEqual(result.count, 1)) {
@@ -156,6 +167,28 @@ export class PaymentRequestRepository {
       });
       return true;
     });
+  }
+
+  private getQueuedAt(
+    expectedStatus: PaymentStatus,
+    nextStatus: PaymentStatus,
+    transitionAt: Date,
+  ): Date | undefined {
+    return isEqual(expectedStatus, PaymentStatus.PENDING) &&
+      isEqual(nextStatus, PaymentStatus.QUEUED)
+      ? transitionAt
+      : undefined;
+  }
+
+  private getProcessingStartedAt(
+    expectedStatus: PaymentStatus,
+    nextStatus: PaymentStatus,
+    transitionAt: Date,
+  ): Date | undefined {
+    return isEqual(expectedStatus, PaymentStatus.QUEUED) &&
+      isEqual(nextStatus, PaymentStatus.PROCESSING)
+      ? transitionAt
+      : undefined;
   }
 
   claimForProcessing(
