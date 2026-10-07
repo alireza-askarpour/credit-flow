@@ -1,10 +1,10 @@
 import {
-  ArgumentsHost,
   Catch,
-  ExceptionFilter,
-  HttpException,
-  HttpStatus,
   Logger,
+  HttpStatus,
+  ArgumentsHost,
+  HttpException,
+  ExceptionFilter,
 } from '@nestjs/common';
 import { ErrorCode } from '../errors/error-code.enum';
 import { isArrayFull, isObject, isString } from '../utils/check.util';
@@ -19,28 +19,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const context = host.switchToHttp();
-    const response = context.getResponse<{
-      status: (statusCode: number) => { json: (body: unknown) => void };
-    }>();
+    const response = this.getResponse(context);
     const request = context.getRequest<RequestWithId>();
-    const status =
-      exception instanceof HttpException
-        ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
-    const exceptionResponse =
-      exception instanceof HttpException ? exception.getResponse() : undefined;
-    const rawMessage = getExceptionMessage(exceptionResponse, exception);
-    const message = isArrayFull(rawMessage)
-      ? rawMessage.map(toErrorCode).join(',')
-      : toErrorCode(rawMessage);
+    const status = this.getStatus(exception);
+    const message = this.getMessage(exception);
 
-    if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
-      this.logger.error(
-        exception instanceof Error
-          ? exception.stack ?? exception.message
-          : exception,
-      );
-    }
+    this.logException(exception, status);
 
     response.status(status).json({
       success: false,
@@ -52,19 +36,55 @@ export class HttpExceptionFilter implements ExceptionFilter {
       timestamp: new Date().toISOString(),
     });
   }
-}
 
-function getExceptionMessage(
-  response: string | object | undefined,
-  exception: unknown,
-): unknown {
-  if (isObject(response)) {
-    return 'message' in response ? response.message : undefined;
+  private getResponse(context: ReturnType<ArgumentsHost['switchToHttp']>): {
+    status: (statusCode: number) => { json: (body: unknown) => void };
+  } {
+    return context.getResponse<{
+      status: (statusCode: number) => { json: (body: unknown) => void };
+    }>();
   }
-  if (exception instanceof HttpException) {
-    return exception.message;
+
+  private getStatus(exception: unknown): number {
+    return exception instanceof HttpException
+      ? exception.getStatus()
+      : HttpStatus.INTERNAL_SERVER_ERROR;
   }
-  return ErrorCode.INTERNAL_SERVER_ERROR;
+
+  private getMessage(exception: unknown): string {
+    const exceptionResponse =
+      exception instanceof HttpException ? exception.getResponse() : undefined;
+    const rawMessage = this.getRawMessage(exceptionResponse, exception);
+
+    return isArrayFull(rawMessage)
+      ? rawMessage.map(toErrorCode).join(',')
+      : toErrorCode(rawMessage);
+  }
+
+  private getRawMessage(
+    response: string | object | undefined,
+    exception: unknown,
+  ): unknown {
+    if (isObject(response)) {
+      return 'message' in response ? response.message : undefined;
+    }
+    if (exception instanceof HttpException) {
+      return exception.message;
+    }
+    return ErrorCode.INTERNAL_SERVER_ERROR;
+  }
+
+  private logException(exception: unknown, status: number): void {
+    if (status < HttpStatus.INTERNAL_SERVER_ERROR) {
+      return;
+    }
+
+    this.logger.error(
+      exception instanceof Error
+        ? exception.stack ?? exception.message
+        : exception,
+    );
+  }
 }
 
 function toErrorCode(value: unknown): string {
