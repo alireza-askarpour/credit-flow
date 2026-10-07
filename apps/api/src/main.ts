@@ -4,7 +4,12 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
 import { EnvironmentVariables } from '@app/config';
-import { hasLength, HttpExceptionFilter, isString } from '@app/common';
+import {
+  hasLength,
+  HttpExceptionFilter,
+  HttpResponseInterceptor,
+  isString,
+} from '@app/common';
 import { securityHeadersMiddleware } from './security/security-headers.middleware';
 import { ApiModule } from './app.module';
 
@@ -13,6 +18,7 @@ async function bootstrap(): Promise<void> {
   app.useLogger(app.get(Logger));
   app.use(securityHeadersMiddleware);
   app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalInterceptors(new HttpResponseInterceptor());
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

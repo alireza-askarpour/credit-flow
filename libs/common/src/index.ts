@@ -14,5 +14,6 @@ export * from './errors/idempotency.error';
 export * from './errors/payment-state-transition.error';
 export * from './errors/payment-processing.error';
 export * from './filters/http-exception.filter';
+export * from './interceptors/http-response.interceptor';
 export * from './state-machine/payment-state-machine';
 export * from './utils';
