@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { ErrorCode, isEqual, isObject, PaymentStatus, TransactionType } from '@app/common';
+import { buildPaginatedResponse, ErrorCode, isEqual, isObject, PaymentStatus, TransactionType } from '@app/common';
 import {
   AdminPaymentSummary,
   AdminReportPeriod,
@@ -77,10 +77,11 @@ export class AdminService {
 
   async listUsers(query: AdminPaginationQueryDto) {
     const result = await this.reports.findUsers(query);
-    return {
-      items: result.items.map((user) => this.toUser(user)),
-      ...this.pagination(query, result.total),
-    };
+    return buildPaginatedResponse(
+      result.items.map((user) => this.toUser(user)),
+      query,
+      result.total,
+    );
   }
 
   async getUser(id: string) {
@@ -112,18 +113,18 @@ export class AdminService {
     const result = await this.reports.findUserTransactions(id, {
       page: query.page,
       limit: query.limit,
-      type: query.type,
-      dateFrom: query.dateFrom ? new Date(query.dateFrom) : undefined,
-      dateTo: query.dateTo ? new Date(query.dateTo) : undefined,
+      filterString: query.filterString,
+      sortString: query.sortString,
     });
-    return {
-      items: result.items.map((transaction: AdminTransactionRecord) => ({
+    return buildPaginatedResponse(
+      result.items.map((transaction: AdminTransactionRecord) => ({
         ...transaction,
         amount: transaction.amount.toString(),
         balanceAfter: transaction.balanceAfter?.toString(),
       })),
-      ...this.pagination(query, result.total),
-    };
+      query,
+      result.total,
+    );
   }
 
   async aggregate(query: AggregateReportQueryDto) {
@@ -172,14 +173,15 @@ export class AdminService {
 
   async listPayments(query: AdminPaymentQueryDto) {
     const result = await this.reports.findPayments(query);
-    return {
-      items: result.items.map((payment) => ({
+    return buildPaginatedResponse(
+      result.items.map((payment) => ({
         ...payment,
         amount: payment.amount.toString(),
         failureReason: undefined,
       })),
-      ...this.pagination(query, result.total),
-    };
+      query,
+      result.total,
+    );
   }
 
   private async cached<T>(key: string, factory: () => Promise<T>): Promise<T> {
@@ -192,10 +194,6 @@ export class AdminService {
 
   private cacheSuffix(query: AggregateReportQueryDto): string {
     return [query.period, query.from ?? '', query.to ?? ''].join(':');
-  }
-
-  private pagination(query: AdminPaginationQueryDto, total: number) {
-    return { page: query.page, limit: query.limit, total, totalPages: Math.ceil(total / query.limit) };
   }
 
   private toUser(user: { id: string; name: string; email: string; balance: bigint; version: number; createdAt: Date; updatedAt: Date }) {

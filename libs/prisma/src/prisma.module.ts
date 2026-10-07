@@ -1,5 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
+import { PrismaQueryFilterService } from './query-filter.service';
 import {
   PaymentEventRepository,
   PaymentRequestRepository,
@@ -12,6 +13,7 @@ import {
 @Module({
   providers: [
     PrismaService,
+    PrismaQueryFilterService,
     PaymentRequestRepository,
     TransactionRepository,
     PaymentEventRepository,
@@ -20,6 +22,7 @@ import {
   ],
   exports: [
     PrismaService,
+    PrismaQueryFilterService,
     UserRepository,
     PaymentRequestRepository,
     TransactionRepository,

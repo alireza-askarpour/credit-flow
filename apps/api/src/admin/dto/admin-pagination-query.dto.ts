@@ -18,8 +18,14 @@ export class AdminPaginationQueryDto {
   @Max(100)
   limit = 20;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'field:operator:value;field:operator:value' })
   @IsOptional()
   @IsString()
-  search?: string;
+  filterString?: string;
+
+  @ApiPropertyOptional({ description: 'field:asc;field:desc' })
+  @IsOptional()
+  @IsString()
+  sortString?: string;
+
 }

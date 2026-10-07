@@ -1,8 +1,8 @@
 import {
-  BadRequestException,
-  ConflictException,
   Injectable,
+  ConflictException,
   NotFoundException,
+  BadRequestException,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import {
@@ -14,18 +14,19 @@ import {
   isNull,
   PaymentEvent,
   PaymentStatus,
+  buildPaginatedResponse,
 } from '@app/common';
 import {
-  PaymentRequestRepository,
   UserRepository,
+  PaymentRequestRepository,
 } from '@app/prisma';
 import { RedisService } from '@app/redis';
 import { MessagingService } from '@app/messaging';
 import { CreatePaymentDto } from './dto/create-payment.dto';
-import { PaymentDetailsResponseDto } from './dto/payment-details-response.dto';
-import { PaymentEventResponseDto } from './dto/payment-event-response.dto';
 import { PaymentListQueryDto } from './dto/payment-list-query.dto';
 import { PaymentListResponseDto } from './dto/payment-list-response.dto';
+import { PaymentEventResponseDto } from './dto/payment-event-response.dto';
+import { PaymentDetailsResponseDto } from './dto/payment-details-response.dto';
 import { PaymentSubmissionResponseDto } from './dto/payment-submission-response.dto';
 
 const IDEMPOTENCY_TTL_SECONDS = 300;
@@ -167,19 +168,15 @@ export class PaymentsService {
     const { items, total } = await this.payments.findByUser(userId, {
       page: query.page,
       limit: query.limit,
-      status: query.status,
-      dateFrom: query.dateFrom ? new Date(query.dateFrom) : undefined,
-      dateTo: query.dateTo ? new Date(query.dateTo) : undefined,
-      reference: query.reference,
+      filterString: query.filterString,
+      sortString: query.sortString,
     });
 
-    return {
-      items: items.map((item) => this.toDetailsResponse(item)),
-      page: query.page,
-      limit: query.limit,
+    return buildPaginatedResponse(
+      items.map((item) => this.toDetailsResponse(item)),
+      query,
       total,
-      totalPages: Math.ceil(total / query.limit),
-    };
+    );
   }
 
   async cancel(id: string): Promise<PaymentDetailsResponseDto> {

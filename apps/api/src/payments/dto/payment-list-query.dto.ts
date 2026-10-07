@@ -1,7 +1,6 @@
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsEnum, IsInt, IsOptional, Max, Min, IsString } from 'class-validator';
-import { PaymentStatus } from '@app/common';
+import { IsInt, IsOptional, Max, Min, IsString } from 'class-validator';
 
 export class PaymentListQueryDto {
   @ApiPropertyOptional({ default: 1, minimum: 1 })
@@ -19,23 +18,14 @@ export class PaymentListQueryDto {
   @Max(100)
   limit = 20;
 
-  @ApiPropertyOptional({ enum: PaymentStatus })
-  @IsOptional()
-  @IsEnum(PaymentStatus)
-  status?: PaymentStatus;
-
-  @ApiPropertyOptional({ format: 'date-time' })
-  @IsOptional()
-  @IsDateString()
-  dateFrom?: string;
-
-  @ApiPropertyOptional({ format: 'date-time' })
-  @IsOptional()
-  @IsDateString()
-  dateTo?: string;
-
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'field:operator:value;field:operator:value' })
   @IsOptional()
   @IsString()
-  reference?: string;
+  filterString?: string;
+
+  @ApiPropertyOptional({ description: 'field:asc;field:desc' })
+  @IsOptional()
+  @IsString()
+  sortString?: string;
+
 }

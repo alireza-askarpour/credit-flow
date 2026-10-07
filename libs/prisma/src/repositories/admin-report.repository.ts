@@ -8,6 +8,7 @@ import {
 } from '@prisma/client';
 import { PaymentStatus, TransactionType } from '@app/common';
 import { PrismaService } from '../prisma.service';
+import { PrismaQueryFilterService } from '../query-filter.service';
 
 export type AdminReportPeriod = 'daily' | 'monthly' | 'yearly';
 
@@ -71,10 +72,13 @@ type AdminPayment = Prisma.PaymentRequestGetPayload<{
 
 @Injectable()
 export class AdminReportRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly queryFilter: PrismaQueryFilterService,
+  ) {}
 
   async findUsers(
-    options: AdminPaginationOptions & { search?: string },
+    options: AdminPaginationOptions & { search?: string; filterString?: string; sortString?: string },
   ): Promise<{ items: User[]; total: number }> {
     const where: Prisma.UserWhereInput = options.search
       ? {
@@ -84,14 +88,10 @@ export class AdminReportRepository {
           ],
         }
       : {};
+    const findMany = this.queryFilter.users(options, where);
     const [items, total] = await this.prisma.$transaction([
-      this.prisma.user.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        skip: (options.page - 1) * options.limit,
-        take: options.limit,
-      }),
-      this.prisma.user.count({ where }),
+      this.prisma.user.findMany(findMany),
+      this.prisma.user.count({ where: findMany.where }),
     ]);
     return { items, total };
   }
@@ -129,6 +129,8 @@ export class AdminReportRepository {
       type?: TransactionType;
       dateFrom?: Date;
       dateTo?: Date;
+      filterString?: string;
+      sortString?: string;
     },
   ): Promise<{ items: Transaction[]; total: number }> {
     const where: Prisma.TransactionWhereInput = {
@@ -141,14 +143,10 @@ export class AdminReportRepository {
           ? { gte: options.dateFrom, lte: options.dateTo }
           : undefined,
     };
+    const findMany = this.queryFilter.transactions(options, where);
     const [items, total] = await this.prisma.$transaction([
-      this.prisma.transaction.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        skip: (options.page - 1) * options.limit,
-        take: options.limit,
-      }),
-      this.prisma.transaction.count({ where }),
+      this.prisma.transaction.findMany(findMany),
+      this.prisma.transaction.count({ where: findMany.where }),
     ]);
     return { items, total };
   }
@@ -237,22 +235,20 @@ export class AdminReportRepository {
   }
 
   async findPayments(
-    options: AdminPaginationOptions & { status?: PaymentStatus },
+    options: AdminPaginationOptions & { status?: PaymentStatus; filterString?: string; sortString?: string },
   ): Promise<{ items: AdminPayment[]; total: number }> {
     const where: Prisma.PaymentRequestWhereInput = {
       status: options.status
         ? this.toPrismaPaymentStatus(options.status)
         : undefined,
     };
+    const findMany = this.queryFilter.payments(options, where);
     const [items, total] = await this.prisma.$transaction([
       this.prisma.paymentRequest.findMany({
-        where,
+        ...findMany,
         include: { user: { select: { id: true, name: true, email: true } } },
-        orderBy: { createdAt: 'desc' },
-        skip: (options.page - 1) * options.limit,
-        take: options.limit,
       }),
-      this.prisma.paymentRequest.count({ where }),
+      this.prisma.paymentRequest.count({ where: findMany.where }),
     ]);
     return { items, total };
   }
