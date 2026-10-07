@@ -3,6 +3,9 @@ import {
   PaymentRequestStatus as PrismaPaymentRequestStatus,
   Prisma,
   TransactionType as PrismaTransactionType,
+  PaymentRequest,
+  Transaction,
+  User,
 } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
 
@@ -13,13 +16,52 @@ export interface AdminPaginationOptions {
   limit: number;
 }
 
+export interface AdminTransactionSummary {
+  type: string;
+  _sum?: { amount?: bigint | null } | null;
+  _count?: { _all?: number } | boolean | null;
+}
+
+export interface AdminPaymentSummary {
+  status: string;
+  _count?: { _all?: number } | boolean | null;
+}
+
+export interface AdminAggregateTransactionRow {
+  period: Date;
+  total_credits: bigint | null;
+  total_debits: bigint | null;
+  credit_count: bigint;
+  debit_count: bigint;
+}
+
+export interface AdminUsageRow {
+  user_id: string;
+  name: string;
+  email: string;
+  current_balance: bigint;
+  total_credited: bigint | null;
+  total_debited: bigint | null;
+  payment_count: bigint;
+  pending_count: bigint;
+  queued_count: bigint;
+  processing_count: bigint;
+  succeeded_count: bigint;
+  failed_count: bigint;
+  cancelled_count: bigint;
+}
+
+type AdminPayment = Prisma.PaymentRequestGetPayload<{
+  include: { user: { select: { id: true; name: true; email: true } } };
+}>;
+
 @Injectable()
 export class AdminReportRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async findUsers(
     options: AdminPaginationOptions & { search?: string },
-  ) {
+  ): Promise<{ items: User[]; total: number }> {
     const where: Prisma.UserWhereInput = options.search
       ? {
           OR: [
@@ -40,7 +82,11 @@ export class AdminReportRepository {
     return { items, total };
   }
 
-  async findUserAccount(userId: string) {
+  async findUserAccount(userId: string): Promise<{
+    user: User;
+    transactionSummary: AdminTransactionSummary[];
+    paymentSummary: AdminPaymentSummary[];
+  } | null> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) return null;
 
@@ -70,7 +116,7 @@ export class AdminReportRepository {
       dateFrom?: Date;
       dateTo?: Date;
     },
-  ) {
+  ): Promise<{ items: Transaction[]; total: number }> {
     const where: Prisma.TransactionWhereInput = {
       userId,
       type: options.type
@@ -97,7 +143,7 @@ export class AdminReportRepository {
     period: AdminReportPeriod,
     dateFrom?: Date,
     dateTo?: Date,
-  ) {
+  ): Promise<AdminAggregateTransactionRow[]> {
     const from = dateFrom ? Prisma.sql`AND "createdAt" >= ${dateFrom}` : Prisma.empty;
     const to = dateTo ? Prisma.sql`AND "createdAt" <= ${dateTo}` : Prisma.empty;
 
@@ -122,7 +168,7 @@ export class AdminReportRepository {
     `;
   }
 
-  usageByUser() {
+  usageByUser(): Promise<AdminUsageRow[]> {
     return this.prisma.$queryRaw<
       Array<{
         user_id: string;
@@ -178,7 +224,7 @@ export class AdminReportRepository {
 
   async findPayments(
     options: AdminPaginationOptions & { status?: string },
-  ) {
+  ): Promise<{ items: AdminPayment[]; total: number }> {
     const where: Prisma.PaymentRequestWhereInput = {
       status: options.status
         ? (options.status as PrismaPaymentRequestStatus)

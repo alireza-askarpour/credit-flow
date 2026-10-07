@@ -1,6 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ErrorCode, isObject, PaymentStatus, TransactionType } from '@app/common';
-import { AdminReportRepository, AdminReportPeriod } from '@app/prisma';
+import {
+  AdminPaymentSummary,
+  AdminReportPeriod,
+  AdminReportRepository,
+  AdminTransactionSummary,
+} from '@app/prisma';
 import { RedisService } from '@app/redis';
 import { AdminPaginationQueryDto } from './dto/admin-pagination-query.dto';
 import { AdminTransactionQueryDto } from './dto/admin-transaction-query.dto';
@@ -189,11 +194,7 @@ export class AdminService {
   }
 
   private sumByType(
-    rows: Array<{
-      type: string;
-      _sum?: { amount?: bigint | null };
-      _count?: { _all?: number } | boolean;
-    }>,
+    rows: AdminTransactionSummary[],
     type: TransactionType,
   ) {
     const row = rows.find((item) => item.type === type);
@@ -204,16 +205,15 @@ export class AdminService {
   }
 
   private countByStatus(
-    rows: Array<{
-      status: string;
-      _count?: { _all?: number } | boolean;
-    }>,
+    rows: AdminPaymentSummary[],
     status: PaymentStatus,
   ): number {
     return this.groupCount(rows.find((item) => item.status === status)?._count);
   }
 
-  private groupCount(count: { _all?: number } | boolean | undefined): number {
+  private groupCount(
+    count: { _all?: number } | boolean | null | undefined,
+  ): number {
     return isObject(count) ? (count as { _all?: number })._all ?? 0 : 0;
   }
 

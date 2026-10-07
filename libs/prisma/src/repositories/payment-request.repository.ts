@@ -46,7 +46,7 @@ export class PaymentRequestRepository {
       dateTo?: Date;
       reference?: string;
     },
-  ) {
+  ): Promise<{ items: PaymentRequest[]; total: number }> {
     const where: Prisma.PaymentRequestWhereInput = {
       userId,
       status: options.status
