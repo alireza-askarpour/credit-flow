@@ -263,7 +263,7 @@ export class PaymentRequestRepository {
         UPDATE "users"
         SET "balance" = "balance" - ${amount},
             "version" = "version" + 1
-        WHERE "id" = ${userId} AND "balance" >= ${amount}
+        WHERE "id" = ${userId}::uuid AND "balance" >= ${amount}
         RETURNING "balance"
       `;
 
