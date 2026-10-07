@@ -25,3 +25,9 @@ export function classifyPaymentError(error: unknown): FailureType {
     ? error.failureType
     : FailureType.TECHNICAL;
 }
+
+export function resolvePaymentErrorCode(error: unknown): string {
+  return error instanceof PaymentProcessingError
+    ? error.code
+    : ErrorCode.PAYMENT_TECHNICAL_FAILURE;
+}

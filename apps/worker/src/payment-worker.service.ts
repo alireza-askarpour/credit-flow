@@ -1,19 +1,21 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+
 import {
-  classifyPaymentError,
-  calculateRetryDelay,
-  FailureType,
-  PaymentJobDto,
-  PaymentProcessingError,
-  PaymentStatus,
-  ErrorCode,
   isIn,
+  isEqual,
   isNil,
+  ErrorCode,
+  FailureType,
+  PaymentStatus,
+  PaymentJobDto,
   MessageOutcome,
+  calculateRetryDelay,
+  classifyPaymentError,
+  resolvePaymentErrorCode,
 } from '@app/common';
-import { EnvironmentVariables } from '@app/config';
 import { MessagingService } from '@app/messaging';
+import { EnvironmentVariables } from '@app/config';
 import { PaymentRequestRepository } from '@app/prisma';
 import { PaymentFailureSimulator } from './payment-failure-simulator.service';
 
@@ -89,12 +91,9 @@ export class PaymentWorkerService implements OnModuleInit {
     error: unknown,
   ): Promise<MessageOutcome> {
     const failureType = classifyPaymentError(error);
-    const failureCode =
-      error instanceof PaymentProcessingError
-        ? error.code
-        : ErrorCode.PAYMENT_TECHNICAL_FAILURE;
+    const failureCode = resolvePaymentErrorCode(error);
 
-    if (failureType === FailureType.BUSINESS) {
+    if (isEqual(failureType, FailureType.BUSINESS)) {
       await this.payments.failProcessing(
         paymentId,
         failureType,
