@@ -1,11 +1,17 @@
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
-import { ApiOperation, ApiSecurity, ApiTags } from '@nestjs/swagger';
+import { ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { AdminApiKeyGuard } from './admin.guard';
 import { AdminService } from './admin.service';
 import { AdminPaginationQueryDto } from './dto/admin-pagination-query.dto';
 import { AdminTransactionQueryDto } from './dto/admin-transaction-query.dto';
 import { AdminPaymentQueryDto } from './dto/admin-payment-query.dto';
 import { AggregateReportQueryDto } from './dto/aggregate-report-query.dto';
+import { ApiListAdminUsers } from './docs/list-admin-users.swagger';
+import { ApiGetAdminUser } from './docs/get-admin-user.swagger';
+import { ApiListAdminTransactions } from './docs/list-admin-transactions.swagger';
+import { ApiAggregateReport } from './docs/aggregate-report.swagger';
+import { ApiUsageReport } from './docs/usage-report.swagger';
+import { ApiListAdminPayments } from './docs/list-admin-payments.swagger';
 
 @Controller('admin')
 @UseGuards(AdminApiKeyGuard)
@@ -15,19 +21,19 @@ export class AdminController {
   constructor(private readonly admin: AdminService) {}
 
   @Get('users')
-  @ApiOperation({ summary: 'List users and balances' })
+  @ApiListAdminUsers()
   listUsers(@Query() query: AdminPaginationQueryDto) {
     return this.admin.listUsers(query);
   }
 
   @Get('users/:id')
-  @ApiOperation({ summary: 'Get an account summary' })
+  @ApiGetAdminUser()
   getUser(@Param('id') id: string) {
     return this.admin.getUser(id);
   }
 
   @Get('users/:id/transactions')
-  @ApiOperation({ summary: 'List a user transactions' })
+  @ApiListAdminTransactions()
   listUserTransactions(
     @Param('id') id: string,
     @Query() query: AdminTransactionQueryDto,
@@ -36,19 +42,19 @@ export class AdminController {
   }
 
   @Get('reports/aggregate')
-  @ApiOperation({ summary: 'Aggregate credits and debits by period' })
+  @ApiAggregateReport()
   aggregate(@Query() query: AggregateReportQueryDto) {
     return this.admin.aggregate(query);
   }
 
   @Get('reports/usage')
-  @ApiOperation({ summary: 'Get balance usage by user' })
+  @ApiUsageReport()
   usage() {
     return this.admin.usage();
   }
 
   @Get('payments')
-  @ApiOperation({ summary: 'List all payment requests' })
+  @ApiListAdminPayments()
   listPayments(@Query() query: AdminPaymentQueryDto) {
     return this.admin.listPayments(query);
   }

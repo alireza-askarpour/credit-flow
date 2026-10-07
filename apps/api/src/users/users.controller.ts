@@ -1,9 +1,12 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 import { CreateUserDto } from './dto/create-user.dto';
 import { CreditUserDto } from './dto/credit-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
 import { UsersService } from './users.service';
+import { ApiCreateUser } from './docs/create-user.swagger';
+import { ApiGetUser } from './docs/get-user.swagger';
+import { ApiCreditUser } from './docs/credit-user.swagger';
 
 @Controller('users')
 @ApiTags('users')
@@ -11,22 +14,19 @@ export class UsersController {
   constructor(private readonly users: UsersService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Create a user account' })
-  @ApiResponse({ status: 201, type: UserResponseDto })
+  @ApiCreateUser()
   create(@Body() dto: CreateUserDto): Promise<UserResponseDto> {
     return this.users.create(dto);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get user details and balance' })
-  @ApiResponse({ status: 200, type: UserResponseDto })
+  @ApiGetUser()
   findById(@Param('id') id: string): Promise<UserResponseDto> {
     return this.users.findById(id);
   }
 
   @Post(':id/credit')
-  @ApiOperation({ summary: 'Add credit to a user balance' })
-  @ApiResponse({ status: 201, type: UserResponseDto })
+  @ApiCreditUser()
   credit(
     @Param('id') id: string,
     @Body() dto: CreditUserDto,

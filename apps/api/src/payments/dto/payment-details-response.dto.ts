@@ -16,12 +16,20 @@ export class PaymentDetailsResponseDto {
   status!: PaymentStatus;
   @ApiPropertyOptional()
   failureCode?: string;
+  @ApiProperty({ example: 0 })
   retryCount!: number;
+  @ApiProperty({ example: 3 })
   maxAttempts!: number;
+  @ApiPropertyOptional({ format: 'date-time' })
   nextRetryAt?: Date;
+  @ApiPropertyOptional({ format: 'date-time' })
   queuedAt?: Date;
+  @ApiPropertyOptional({ format: 'date-time' })
   processingStartedAt?: Date;
+  @ApiPropertyOptional({ format: 'date-time' })
   completedAt?: Date;
+  @ApiProperty({ format: 'date-time' })
   createdAt!: Date;
+  @ApiProperty({ format: 'date-time' })
   updatedAt!: Date;
 }

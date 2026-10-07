@@ -4,6 +4,7 @@ import { PrismaService } from '@app/prisma';
 import { RedisService } from '@app/redis';
 import { isEqual } from '@app/common';
 import { HealthStatus } from './health-status.enum';
+import { ApiGetHealth } from './docs/get-health.swagger';
 
 interface HealthChecks {
   database: HealthStatus;
@@ -20,6 +21,7 @@ export class HealthController {
   ) {}
 
   @Get()
+  @ApiGetHealth()
   async check(): Promise<Record<string, unknown>> {
     const result = await this.getHealthResult();
 
