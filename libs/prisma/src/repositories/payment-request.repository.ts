@@ -17,7 +17,10 @@ import {
 } from '@app/common';
 import { PaymentEventRepository } from './payment-event.repository';
 import { PrismaService } from '../prisma.service';
-import { PrismaQueryFilterService } from '../query-filter.service';
+import {
+  PrismaFilterQuery,
+  PrismaQueryFilterService,
+} from '../query-filter.service';
 
 interface RetryMetadata {
   attemptNumber: number;
@@ -57,11 +60,18 @@ export class PaymentRequestRepository {
     return this.prisma.paymentRequest.findUnique({ where: { id } });
   }
 
-  findEventsByPaymentRequestId(paymentRequestId: string): Promise<PaymentEvent[]> {
-    return this.prisma.paymentEvent.findMany({
-      where: { paymentRequestId },
-      orderBy: { createdAt: 'asc' },
-    });
+  async findEventsByPaymentRequestId(
+    paymentRequestId: string,
+    query: PrismaFilterQuery,
+  ): Promise<{ items: PaymentEvent[]; total: number }> {
+    const where = { paymentRequestId };
+    const findMany = this.queryFilter.events(query, where);
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.paymentEvent.findMany(findMany),
+      this.prisma.paymentEvent.count({ where: findMany.where }),
+    ]);
+
+    return { items, total };
   }
 
   async findByUser(

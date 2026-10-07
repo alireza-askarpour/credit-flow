@@ -26,6 +26,7 @@ import { CreatePaymentDto } from './dto/create-payment.dto';
 import { PaymentListQueryDto } from './dto/payment-list-query.dto';
 import { PaymentListResponseDto } from './dto/payment-list-response.dto';
 import { PaymentEventResponseDto } from './dto/payment-event-response.dto';
+import { PaymentEventListResponseDto } from './dto/payment-event-list-response.dto';
 import { PaymentDetailsResponseDto } from './dto/payment-details-response.dto';
 import { PaymentSubmissionResponseDto } from './dto/payment-submission-response.dto';
 
@@ -139,21 +140,32 @@ export class PaymentsService {
     return this.toDetailsResponse(payment);
   }
 
-  async findEvents(id: string): Promise<PaymentEventResponseDto[]> {
+  async findEvents(
+    id: string,
+    query: PaymentListQueryDto,
+  ): Promise<PaymentEventListResponseDto> {
     const payment = await this.payments.findById(id);
     if (!payment) {
       throw new NotFoundException(ErrorCode.PAYMENT_NOT_FOUND);
     }
 
-    const events = await this.payments.findEventsByPaymentRequestId(id);
-    return events.map((event) => ({
-      id: event.id,
-      eventType: event.eventType,
-      previousStatus: this.toPaymentStatus(event.previousStatus),
-      newStatus: this.toPaymentStatus(event.newStatus),
-      attemptNumber: event.attemptNumber ?? undefined,
-      createdAt: event.createdAt,
-    }));
+    const result = await this.payments.findEventsByPaymentRequestId(
+      id,
+      query,
+    );
+
+    return buildPaginatedResponse(
+      result.items.map((event) => ({
+        id: event.id,
+        eventType: event.eventType,
+        previousStatus: this.toPaymentStatus(event.previousStatus),
+        newStatus: this.toPaymentStatus(event.newStatus),
+        attemptNumber: event.attemptNumber ?? undefined,
+        createdAt: event.createdAt,
+      })),
+      query,
+      result.total,
+    );
   }
 
   async findByUser(

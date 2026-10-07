@@ -7,9 +7,7 @@ import {
   AdminTransactionSummary,
 } from '@app/prisma';
 import { RedisService } from '@app/redis';
-import { AdminPaginationQueryDto } from './dto/admin-pagination-query.dto';
-import { AdminTransactionQueryDto } from './dto/admin-transaction-query.dto';
-import { AdminPaymentQueryDto } from './dto/admin-payment-query.dto';
+import { PaymentListQueryDto } from '../payments/dto/payment-list-query.dto';
 import {
   AdminReportPeriodDto,
   AggregateReportQueryDto,
@@ -75,7 +73,7 @@ export class AdminService {
     private readonly redis: RedisService,
   ) {}
 
-  async listUsers(query: AdminPaginationQueryDto) {
+  async listUsers(query: PaymentListQueryDto) {
     const result = await this.reports.findUsers(query);
     return buildPaginatedResponse(
       result.items.map((user) => this.toUser(user)),
@@ -106,7 +104,7 @@ export class AdminService {
     };
   }
 
-  async listUserTransactions(id: string, query: AdminTransactionQueryDto) {
+  async listUserTransactions(id: string, query: PaymentListQueryDto) {
     const user = await this.reports.findUserAccount(id);
     if (!user) throw new NotFoundException(ErrorCode.USER_NOT_FOUND);
 
@@ -171,7 +169,7 @@ export class AdminService {
     });
   }
 
-  async listPayments(query: AdminPaymentQueryDto) {
+  async listPayments(query: PaymentListQueryDto) {
     const result = await this.reports.findPayments(query);
     return buildPaginatedResponse(
       result.items.map((payment) => ({

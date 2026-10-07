@@ -28,6 +28,7 @@ interface FieldConfig {
 
 interface ModelConfig {
   fields: Readonly<Record<string, FieldConfig>>;
+  defaultSort?: 'asc' | 'desc';
 }
 
 const USER_CONFIG: ModelConfig = {
@@ -58,6 +59,15 @@ const PAYMENT_CONFIG: ModelConfig = {
   },
 };
 
+const EVENT_CONFIG: ModelConfig = {
+  defaultSort: 'asc',
+  fields: {
+    id: {}, paymentRequestId: {}, eventType: { type: 'enum' },
+    previousStatus: { type: 'enum' }, newStatus: { type: 'enum' },
+    attemptNumber: { type: 'number' }, createdAt: { type: 'date' },
+  },
+};
+
 @Injectable()
 export class PrismaQueryFilterService {
   users(query: PrismaFilterQuery, base: Prisma.UserWhereInput = {}): Prisma.UserFindManyArgs {
@@ -70,6 +80,10 @@ export class PrismaQueryFilterService {
 
   payments(query: PrismaFilterQuery, base: Prisma.PaymentRequestWhereInput = {}): Prisma.PaymentRequestFindManyArgs {
     return this.build(query, PAYMENT_CONFIG, base);
+  }
+
+  events(query: PrismaFilterQuery, base: Prisma.PaymentEventWhereInput = {}): Prisma.PaymentEventFindManyArgs {
+    return this.build(query, EVENT_CONFIG, base);
   }
 
   private build<TWhere extends object>(
@@ -170,7 +184,7 @@ export class PrismaQueryFilterService {
   }
 
   private parseSort(value: string | undefined, config: ModelConfig): Record<string, 'asc' | 'desc'>[] {
-    if (!value?.trim()) return [{ createdAt: 'desc' }];
+    if (!value?.trim()) return [{ createdAt: config.defaultSort ?? 'desc' }];
     return value.split(';').filter(Boolean).map((item) => {
       const [field, direction] = item.split(':');
       if (!field || !config.fields[field] || !['asc', 'desc'].includes(direction ?? '')) {

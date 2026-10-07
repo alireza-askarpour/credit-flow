@@ -2,9 +2,7 @@ import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { AdminApiKeyGuard } from './admin.guard';
 import { AdminService } from './admin.service';
-import { AdminPaginationQueryDto } from './dto/admin-pagination-query.dto';
-import { AdminTransactionQueryDto } from './dto/admin-transaction-query.dto';
-import { AdminPaymentQueryDto } from './dto/admin-payment-query.dto';
+import { PaymentListQueryDto } from '../payments/dto/payment-list-query.dto';
 import { AggregateReportQueryDto } from './dto/aggregate-report-query.dto';
 import { ApiListAdminUsers } from './docs/list-admin-users.swagger';
 import { ApiGetAdminUser } from './docs/get-admin-user.swagger';
@@ -22,7 +20,7 @@ export class AdminController {
 
   @Get('users')
   @ApiListAdminUsers()
-  listUsers(@Query() query: AdminPaginationQueryDto) {
+  listUsers(@Query() query: PaymentListQueryDto) {
     return this.admin.listUsers(query);
   }
 
@@ -36,7 +34,7 @@ export class AdminController {
   @ApiListAdminTransactions()
   listUserTransactions(
     @Param('id') id: string,
-    @Query() query: AdminTransactionQueryDto,
+    @Query() query: PaymentListQueryDto,
   ) {
     return this.admin.listUserTransactions(id, query);
   }
@@ -55,7 +53,7 @@ export class AdminController {
 
   @Get('payments')
   @ApiListAdminPayments()
-  listPayments(@Query() query: AdminPaymentQueryDto) {
+  listPayments(@Query() query: PaymentListQueryDto) {
     return this.admin.listPayments(query);
   }
 }

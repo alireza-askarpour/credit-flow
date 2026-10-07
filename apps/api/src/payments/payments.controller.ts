@@ -7,11 +7,14 @@ import {
   HttpStatus,
   Param,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { PaymentDetailsResponseDto } from './dto/payment-details-response.dto';
 import { PaymentEventResponseDto } from './dto/payment-event-response.dto';
+import { PaymentEventListResponseDto } from './dto/payment-event-list-response.dto';
+import { PaymentListQueryDto } from './dto/payment-list-query.dto';
 import { PaymentSubmissionResponseDto } from './dto/payment-submission-response.dto';
 import { PaymentsService } from './payments.service';
 import { ApiSubmitPayment } from './docs/submit-payment.swagger';
@@ -42,8 +45,11 @@ export class PaymentsController {
 
   @Get(':id/events')
   @ApiGetPaymentEvents()
-  findEvents(@Param('id') id: string): Promise<PaymentEventResponseDto[]> {
-    return this.payments.findEvents(id);
+  findEvents(
+    @Param('id') id: string,
+    @Query() query: PaymentListQueryDto,
+  ): Promise<PaymentEventListResponseDto> {
+    return this.payments.findEvents(id, query);
   }
 
   @Post(':id/cancel')
