@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, User } from '@prisma/client';
-import { TransactionType } from '@app/common';
+import { isEqual, TransactionType } from '@app/common';
 import { TransactionRepository } from './transaction.repository';
 import { PrismaService } from '../prisma.service';
 
@@ -38,7 +38,7 @@ export class UserRepository {
       },
     });
 
-    return result.count === 1;
+    return isEqual(result.count, 1);
   }
 
   credit(userId: string, amount: bigint): Promise<User> {

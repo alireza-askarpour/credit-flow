@@ -1,3 +1,5 @@
+import { isEqual } from '@app/common';
+
 export interface PinoTransportConfig {
   target: string;
   options: {
@@ -11,7 +13,7 @@ export interface PinoTransportConfig {
 export const createPinoTransport = (
   mode: string,
 ): PinoTransportConfig | undefined =>
-  mode === 'production'
+  isEqual(mode, 'production')
     ? undefined
     : {
         target: 'pino-pretty',

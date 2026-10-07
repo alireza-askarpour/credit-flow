@@ -2,6 +2,7 @@ import { Controller, Get, HttpException, HttpStatus } from '@nestjs/common';
 import { MessagingService } from '@app/messaging';
 import { PrismaService } from '@app/prisma';
 import { RedisService } from '@app/redis';
+import { isEqual } from '@app/common';
 
 @Controller('health')
 export class HealthController {
@@ -30,7 +31,7 @@ export class HealthController {
     }
 
     checks.rabbitmq = this.messaging.isHealthy() ? 'ok' : 'down';
-    const healthy = Object.values(checks).every((value) => value === 'ok');
+    const healthy = Object.values(checks).every((value) => isEqual(value, 'ok'));
     const result = { status: healthy ? 'ok' : 'degraded', checks };
 
     if (!healthy) {

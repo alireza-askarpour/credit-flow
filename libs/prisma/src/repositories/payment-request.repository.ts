@@ -14,6 +14,7 @@ import {
   PaymentStatus,
   ErrorCode,
   TransactionType,
+  isEqual,
 } from '@app/common';
 import { PaymentEventRepository } from './payment-event.repository';
 import { PrismaService } from '../prisma.service';
@@ -139,7 +140,7 @@ export class PaymentRequestRepository {
           status: nextStatus as PrismaPaymentRequestStatus,
         },
       });
-      if (result.count !== 1) {
+      if (!isEqual(result.count, 1)) {
         return false;
       }
 
@@ -199,7 +200,7 @@ export class PaymentRequestRepository {
         RETURNING "balance"
       `;
 
-      if (updatedUsers.length === 0) {
+      if (isEqual(updatedUsers.length, 0)) {
         throw new InsufficientBalanceError();
       }
       const updatedUser = updatedUsers[0];
@@ -217,7 +218,7 @@ export class PaymentRequestRepository {
           completedAt: new Date(),
         },
       });
-      if (updatedPayment.count !== 1) {
+      if (!isEqual(updatedPayment.count, 1)) {
         throw new Error(ErrorCode.PAYMENT_NOT_IN_PROCESSING_STATE);
       }
 
@@ -265,7 +266,7 @@ export class PaymentRequestRepository {
           completedAt: new Date(),
         },
       });
-      if (result.count !== 1) {
+      if (!isEqual(result.count, 1)) {
         return false;
       }
 
@@ -305,7 +306,7 @@ export class PaymentRequestRepository {
           nextRetryAt,
         },
       });
-      if (result.count !== 1) {
+      if (!isEqual(result.count, 1)) {
         return false;
       }
 

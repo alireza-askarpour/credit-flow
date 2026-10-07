@@ -1,8 +1,8 @@
 import { EnvironmentVariables } from './interfaces/config.interface';
-import { ErrorCode, isNumber, isUndefined } from '@app/common';
+import { ErrorCode, isEqual, isNumber, isUndefined } from '@app/common';
 
 const parseBoolean = (value: string | undefined, fallback = false): boolean =>
-  isUndefined(value) ? fallback : value === 'true';
+  isUndefined(value) ? fallback : isEqual(value, 'true');
 
 const parseNumber = (value: string | undefined, fallback: number): number => {
   const parsed = Number.parseInt(value ?? '', 10);
@@ -29,7 +29,7 @@ export const config = (): EnvironmentVariables => ({
       : [],
     swagger_enabled: parseBoolean(
       process.env.APP_SWAGGER_ENABLED,
-      process.env.NODE_ENV !== 'production',
+      !isEqual(process.env.NODE_ENV, 'production'),
     ),
     swagger_path: process.env.APP_SWAGGER_PATH ?? 'docs',
   },

@@ -5,7 +5,7 @@ import {
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { ErrorCode, PaymentEvent, PaymentStatus } from '@app/common';
+import { ErrorCode, isEqual, PaymentEvent, PaymentStatus } from '@app/common';
 import {
   PaymentRequestRepository,
   UserRepository,
@@ -207,10 +207,10 @@ export class PaymentsService {
     dto: CreatePaymentDto,
   ): PaymentSubmissionResponseDto {
     const matches =
-      existing.userId === dto.userId &&
-      existing.amount === BigInt(dto.amount) &&
-      existing.reference === dto.reference &&
-      (existing.description ?? undefined) === dto.description;
+      isEqual(existing.userId, dto.userId) &&
+      isEqual(existing.amount, BigInt(dto.amount)) &&
+      isEqual(existing.reference, dto.reference) &&
+      isEqual(existing.description ?? undefined, dto.description);
 
     if (!matches) {
       throw new ConflictException(ErrorCode.IDEMPOTENCY_KEY_PAYLOAD_CONFLICT);

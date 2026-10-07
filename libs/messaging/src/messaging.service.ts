@@ -17,6 +17,7 @@ import {
   QUEUE_PREFETCH_COUNT,
   PaymentJobDto,
   MessageOutcome,
+  isEqual,
 } from '@app/common';
 import { ErrorCode } from '@app/common';
 import { EnvironmentVariables } from '@app/config';
@@ -152,9 +153,9 @@ export class MessagingService implements OnModuleInit, OnModuleDestroy {
         const job = JSON.parse(message.content.toString()) as PaymentJobDto;
         const outcome = await handler(job);
 
-        if (outcome === MessageOutcome.ACK) {
+        if (isEqual(outcome, MessageOutcome.ACK)) {
           this.channel?.ack(message);
-        } else if (outcome === MessageOutcome.REQUEUE) {
+        } else if (isEqual(outcome, MessageOutcome.REQUEUE)) {
           this.channel?.nack(message, false, true);
         } else {
           this.channel?.nack(message, false, false);

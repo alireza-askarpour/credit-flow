@@ -1,6 +1,7 @@
 import { PaymentStatus } from '../enums/payment-status.enum';
 import { FailureType } from '../enums/failure-type.enum';
 import { PaymentStateTransitionError } from '../errors/payment-state-transition.error';
+import { isEqual } from '../utils/check.util';
 
 const TRANSITIONS: Readonly<Record<PaymentStatus, readonly PaymentStatus[]>> = {
   [PaymentStatus.PENDING]: [PaymentStatus.QUEUED, PaymentStatus.CANCELLED],
@@ -29,9 +30,9 @@ export function canTransition(
   }
 
   return (
-    from !== PaymentStatus.PROCESSING ||
-    to !== PaymentStatus.QUEUED ||
-    context.failureType === FailureType.TECHNICAL
+    !isEqual(from, PaymentStatus.PROCESSING) ||
+    !isEqual(to, PaymentStatus.QUEUED) ||
+    isEqual(context.failureType, FailureType.TECHNICAL)
   );
 }
 

@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EnvironmentVariables } from '@app/config';
-import { ErrorCode } from '@app/common';
+import { ErrorCode, isEqual } from '@app/common';
 
 @Injectable()
 export class AdminApiKeyGuard implements CanActivate {
@@ -19,7 +19,7 @@ export class AdminApiKeyGuard implements CanActivate {
     const providedKey = request.headers['x-admin-api-key'];
     const expectedKey = this.config.getOrThrow('admin.api_key', { infer: true });
 
-    if (!providedKey || providedKey !== expectedKey) {
+    if (!providedKey || !isEqual(providedKey, expectedKey)) {
       throw new UnauthorizedException(ErrorCode.VALID_ADMIN_API_KEY_REQUIRED);
     }
     return true;

@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { ErrorCode, isObject, PaymentStatus, TransactionType } from '@app/common';
+import { ErrorCode, isEqual, isObject, PaymentStatus, TransactionType } from '@app/common';
 import {
   AdminPaymentSummary,
   AdminReportPeriod,
@@ -197,7 +197,7 @@ export class AdminService {
     rows: AdminTransactionSummary[],
     type: TransactionType,
   ) {
-    const row = rows.find((item) => item.type === type);
+    const row = rows.find((item) => isEqual(item.type, type));
     return {
       amount: this.bigIntString(row?._sum?.amount),
       count: this.groupCount(row?._count),
@@ -208,7 +208,7 @@ export class AdminService {
     rows: AdminPaymentSummary[],
     status: PaymentStatus,
   ): number {
-    return this.groupCount(rows.find((item) => item.status === status)?._count);
+    return this.groupCount(rows.find((item) => isEqual(item.status, status))?._count);
   }
 
   private groupCount(
@@ -223,7 +223,7 @@ export class AdminService {
 
   private usagePercent(debited: bigint | null, credited: bigint | null): number {
     const credit = Number(credited ?? 0n);
-    if (credit === 0) return 0;
+    if (isEqual(credit, 0)) return 0;
     return Number(((Number(debited ?? 0n) / credit) * 100).toFixed(2));
   }
 }
