@@ -17,6 +17,8 @@
     "start:dev:worker": "nest start worker --watch",
     "start:prod:api": "node dist/apps/api/main.js",
     "start:prod:worker": "node dist/apps/worker/main.js",
+    "start:debug:api": "nest start api --debug 9229 --watch",
+    "start:debug:worker": "nest start worker --debug 9230 --watch",
     "prisma:generate": "prisma generate --schema libs/prisma/prisma/schema.prisma",
     "prisma:migrate": "prisma migrate dev --schema libs/prisma/prisma/schema.prisma",
     "prisma:migrate:deploy": "prisma migrate deploy --schema libs/prisma/prisma/schema.prisma",
