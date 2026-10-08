@@ -4,7 +4,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: build
-    command: ["npm", "run", "prisma:migrate:deploy"]
+    command:
+      ["sh", "-c", "npm run prisma:migrate:deploy && npm run prisma:seed"]
     environment:
       DATABASE_URL: postgresql://credit_flow:credit_flow@postgres:5432/credit_flow
     depends_on:
@@ -118,10 +119,12 @@ services:
     volumes:
       - credit-flow-rabbitmq-data:/var/lib/rabbitmq
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      test:
+        ["CMD-SHELL", "rabbitmq-diagnostics -q listeners | grep -q '5672'"]
       interval: 10s
       timeout: 5s
       retries: 10
+      start_period: 20s
 
 volumes:
   credit-flow-postgres-data:
