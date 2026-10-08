@@ -2,6 +2,7 @@ import { applyDecorators, HttpStatus, Type } from '@nestjs/common';
 import {
   ApiResponse,
   ApiResponseOptions,
+  ApiExtraModels,
   getSchemaPath,
 } from '@nestjs/swagger';
 
@@ -37,5 +38,8 @@ export const ApiSuccessResponse = ({
         },
   };
 
-  return applyDecorators(ApiResponse(options));
+  return applyDecorators(
+    ...(type ? [ApiExtraModels(type)] : []),
+    ApiResponse(options),
+  );
 };
