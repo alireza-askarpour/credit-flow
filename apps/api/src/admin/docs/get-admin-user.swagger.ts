@@ -1,14 +1,14 @@
 import { HttpStatus, applyDecorators } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
+import { ApiOperation } from '@nestjs/swagger';
 import { ErrorCode } from '@app/common';
 import { ApiErrorResponses } from '../../swagger/api-error-response.decorator';
+import { ApiSuccessResponse } from '../../swagger/api-success-response.decorator';
 
 export const ApiGetAdminUser = (): MethodDecorator =>
   applyDecorators(
     ApiOperation({ summary: 'Get an account summary' }),
-    ApiOkResponse({
-      schema: {
-        example: {
+    ApiSuccessResponse({
+      example: {
           user: { id: 'uuid', name: 'Ali Ahmadi', email: 'ali@example.com', balance: '100000', version: 1 },
           summary: {
             totalCredited: '500000',
@@ -17,7 +17,6 @@ export const ApiGetAdminUser = (): MethodDecorator =>
             debitTransactionCount: 1,
             paymentCounts: { PENDING: 0, QUEUED: 0, PROCESSING: 0, SUCCEEDED: 1, FAILED: 0, CANCELLED: 0 },
           },
-        },
       },
     }),
     ApiErrorResponses(

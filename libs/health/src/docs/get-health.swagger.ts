@@ -9,12 +9,17 @@ export const ApiGetHealth = (): MethodDecorator =>
       description: 'All dependencies are healthy',
       schema: {
         example: {
-          status: 'ok',
-          checks: {
-            database: 'ok',
-            redis: 'ok',
-            rabbitmq: 'ok',
+          success: true,
+          response: {
+            status: 'ok',
+            checks: {
+              database: 'ok',
+              redis: 'ok',
+              rabbitmq: 'ok',
+            },
           },
+          requestId: 'request-id',
+          timestamp: '2026-10-08T00:00:00.000Z',
         },
       },
     }),
@@ -23,12 +28,13 @@ export const ApiGetHealth = (): MethodDecorator =>
       description: 'One or more dependencies are unavailable',
       schema: {
         example: {
-          status: 'degraded',
-          checks: {
-            database: 'down',
-            redis: 'ok',
-            rabbitmq: 'ok',
+          success: false,
+          error: {
+            code: 'HTTP_503',
+            message: 'SERVICE_UNAVAILABLE',
           },
+          requestId: 'request-id',
+          timestamp: '2026-10-08T00:00:00.000Z',
         },
       },
     }),

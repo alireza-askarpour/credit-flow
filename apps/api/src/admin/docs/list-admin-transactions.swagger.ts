@@ -1,20 +1,23 @@
 import { HttpStatus, applyDecorators } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { ErrorCode } from '@app/common';
 import { ApiErrorResponses } from '../../swagger/api-error-response.decorator';
+import { ApiSuccessResponse } from '../../swagger/api-success-response.decorator';
 
 export const ApiListAdminTransactions = (): MethodDecorator =>
   applyDecorators(
     ApiOperation({ summary: 'List user transactions' }),
-    ApiOkResponse({
-      schema: {
-        example: {
+    ApiQuery({ name: 'page', required: false, type: Number, example: 1 }),
+    ApiQuery({ name: 'limit', required: false, type: Number, example: 20 }),
+    ApiQuery({ name: 'filterString', required: false, type: String, example: 'type:eq:DEBIT' }),
+    ApiQuery({ name: 'sortString', required: false, type: String, example: 'createdAt:desc' }),
+    ApiSuccessResponse({
+      example: {
           items: [{ id: 'uuid', userId: 'user-uuid', amount: '100000', reference: 'ORDER_123', type: 'CREDIT', balanceAfter: '200000' }],
           page: 1,
           limit: 20,
           total: 1,
           totalPages: 1,
-        },
       },
     }),
     ApiErrorResponses(
