@@ -16,9 +16,9 @@ import {
 const REPORT_CACHE_TTL_SECONDS = 30;
 
 const REPORT_PERIOD_MAP: Record<AdminReportPeriodDto, AdminReportPeriod> = {
-  [AdminReportPeriodDto.DAILY]: 'daily',
-  [AdminReportPeriodDto.MONTHLY]: 'monthly',
-  [AdminReportPeriodDto.YEARLY]: 'yearly',
+  [AdminReportPeriodDto.DAILY]: 'day',
+  [AdminReportPeriodDto.MONTHLY]: 'month',
+  [AdminReportPeriodDto.YEARLY]: 'year',
 };
 
 interface AdminTransactionRecord {

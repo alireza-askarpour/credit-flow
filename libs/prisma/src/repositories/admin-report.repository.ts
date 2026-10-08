@@ -9,7 +9,7 @@ import { PaymentStatus, TransactionType } from '@app/common';
 import { PrismaService } from '../prisma.service';
 import { PrismaQueryFilterService } from '../query-filter.service';
 
-export type AdminReportPeriod = 'daily' | 'monthly' | 'yearly';
+export type AdminReportPeriod = 'day' | 'month' | 'year';
 
 const TRANSACTION_TYPE_MAP: Record<TransactionType, $Enums.TransactionType> = {
   [TransactionType.CREDIT]: $Enums.TransactionType.CREDIT,
