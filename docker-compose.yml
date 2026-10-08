@@ -1,4 +1,16 @@
 services:
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: build
+    command: ["npm", "run", "prisma:migrate:deploy"]
+    environment:
+      DATABASE_URL: postgresql://credit_flow:credit_flow@postgres:5432/credit_flow
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   api:
     build:
       context: .
@@ -11,6 +23,7 @@ services:
       REDIS_URL: redis://redis:6379
       RABBITMQ_URL: amqp://credit_flow:credit_flow@rabbitmq:5672
       ADMIN_API_KEY: change-me-to-a-long-random-secret
+      PAYMENT_SIMULATION_ENABLED: "false"
     ports:
       - "3000:3000"
     depends_on:
@@ -20,6 +33,14 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
   worker:
     build:
@@ -33,6 +54,7 @@ services:
       REDIS_URL: redis://redis:6379
       RABBITMQ_URL: amqp://credit_flow:credit_flow@rabbitmq:5672
       ADMIN_API_KEY: change-me-to-a-long-random-secret
+      PAYMENT_SIMULATION_ENABLED: "false"
     ports:
       - "3001:3001"
     depends_on:
@@ -42,6 +64,14 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
   postgres:
     image: postgres:16-alpine
